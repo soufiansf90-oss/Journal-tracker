@@ -22,7 +22,6 @@ st.markdown("""
         font-weight: 700; margin-bottom: 25px; text-shadow: 0 0 10px rgba(0,212,255,0.4); 
     }
     
-    /* Sidebar Styling - NEON PURPLE ROUNDED */
     [data-testid="stSidebar"] { background-color: #080810; border-right: 2px solid #bc13fe33; }
     
     .equity-box { 
@@ -45,12 +44,10 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(188,19,254,0.4); background: rgba(188, 19, 254, 0.1) !important;
     }
 
-    /* Journal States */
     .journal-win { border-left: 5px solid #00ffcc; background: rgba(0, 255, 204, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
     .journal-loss { border-left: 5px solid #ff4b4b; background: rgba(255, 75, 75, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
     .journal-be { border-left: 5px solid #ffcc00; background: rgba(255, 204, 0, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
 
-    /* Performance Cards */
     .perf-card { 
         background: rgba(20, 20, 30, 0.8); border: 1px solid #bc13fe33; 
         padding: 20px; border-radius: 20px; text-align: center; 
@@ -103,12 +100,11 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
     choice = st.radio("MENU", ["TERMINAL", "CALENDAR", "PERFORMANCE", "JOURNAL", "ARCHIVE"])
 
 st.markdown('<div class="welcome-text">SYSTEM ONLINE. ANALYZING SHADOW PERFORMANCE.</div>', unsafe_allow_html=True)
 
-# --- 5. TERMINAL ---
+# --- 5. TERMINAL (مع الشارت الديناميكي الملون %) ---
 if choice == "TERMINAL":
     c1, c2 = st.columns([1, 2.3])
     with c1:
@@ -131,13 +127,50 @@ if choice == "TERMINAL":
     with c2:
         if not df.empty:
             df_chart = df.sort_values(by='date_dt')
-            df_chart['equity_curve'] = init_amount + df_chart['pnl'].cumsum()
-            fig = px.line(df_chart, x='date', y='equity_curve', title="GROWTH CURVE")
-            fig.update_traces(line_color='#bc13fe', line_width=3)
-            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani")
+            df_chart['pnl_percent'] = (df_chart['pnl'].cumsum() / init_amount) * 100
+            
+            last_val = df_chart['pnl_percent'].iloc[-1]
+            l_color = "#00ffcc" if last_val > 0 else "#ff4b4b" if last_val < 0 else "#ffcc00"
+            f_color = "rgba(0, 255, 204, 0.1)" if last_val > 0 else "rgba(255, 75, 75, 0.1)" if last_val < 0 else "rgba(255, 204, 0, 0.1)"
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=df_chart['date'], y=df_chart['pnl_percent'], mode='lines+markers',
+                                     line=dict(color=l_color, width=3, shape='spline'), fill='tozeroy', fillcolor=f_color,
+                                     marker=dict(size=8, color=l_color)))
+            fig.add_hline(y=0, line_dash="dash", line_color="#444", line_width=1)
+            fig.update_layout(title="GROWTH CURVE (%)", template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', 
+                              plot_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani", yaxis_ticksuffix="%")
             st.plotly_chart(fig, use_container_width=True)
 
-# --- 6. CALENDAR (FULL VERSION) ---
+# --- 6. PERFORMANCE (مع تصحيح Profit Factor) ---
+elif choice == "PERFORMANCE":
+    if not df.empty:
+        wins, losses = df[df['pnl'] > 0], df[df['pnl'] < 0]
+        wr = (len(wins)/len(df))*100
+        avg_rr = df['rr'].mean()
+        
+        gross_profit, gross_loss = wins['pnl'].sum(), abs(losses['pnl'].sum())
+        pf = gross_profit / gross_loss if gross_loss != 0 else gross_profit
+        
+        consistency = max(0, min(100, 100 - ((df['pnl'].std() / abs(df['pnl'].mean())) * 10))) if len(df)>2 else 0
+
+        c_g, c_s = st.columns([1, 1.5])
+        with c_g:
+            st.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=wr, number={'suffix':"%", 'font':{'family':'Rajdhani'}}, 
+                                                  gauge={'bar':{'color':"#00ffcc"}})).update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)'), use_container_width=True)
+        with c_s:
+            r1 = st.columns(3)
+            r1[0].markdown(f'<div class="perf-card"><h4>{avg_rr:.2f}</h4><p>Avg RR</p></div>', unsafe_allow_html=True)
+            r1[1].markdown(f'<div class="perf-card"><h4>{pf:.2f}</h4><p>Profit Factor</p></div>', unsafe_allow_html=True)
+            r1[2].markdown(f'<div class="perf-card"><h4>{consistency:.0f}%</h4><p>Consistency</p></div>', unsafe_allow_html=True)
+            r2 = st.columns(2)
+            r2[0].markdown(f'<div class="perf-card"><h4 style="color:#00ffcc">${df["pnl"].max():,.0f}</h4><p>Best</p></div>', unsafe_allow_html=True)
+            r2[1].markdown(f'<div class="perf-card"><h4 style="color:#ff4b4b">${df["pnl"].min():,.0f}</h4><p>Worst</p></div>', unsafe_allow_html=True)
+        
+        net = df['pnl'].sum()
+        st.markdown(f'<div style="text-align:center; margin-top:30px;"><h1 style="color:{"#00ffcc" if net>=0 else "#ff4b4b"}; font-size:3.5rem; font-family:Rajdhani;">${net:,.2f}</h1><p>TOTAL NET PROFIT</p></div>', unsafe_allow_html=True)
+
+# --- 7. CALENDAR, JOURNAL, ARCHIVE (كود ثابت) ---
 elif choice == "CALENDAR":
     if not df.empty:
         first_day = df['date_dt'].min().replace(day=1)
@@ -159,47 +192,12 @@ elif choice == "CALENDAR":
                         curr_date = first_day.replace(day=d_num)
                         day_trades = df[df['date_dt'].dt.date == curr_date.date()]
                         d_pnl = day_trades['pnl'].sum()
-                        bg, border, txt = "rgba(255,255,255,0.02)", "rgba(255,255,255,0.05)", "#444"
-                        p_str = ""
-                        if len(day_trades) > 0:
-                            if d_pnl > 0: bg, border, txt = "rgba(0,255,204,0.1)", "#00ffcc", "#00ffcc"; p_str = f"+${d_pnl:,.0f}"
-                            elif d_pnl < 0: bg, border, txt = "rgba(255,75,75,0.1)", "#ff4b4b", "#ff4b4b"; p_str = f"-${abs(d_pnl):,.0f}"
-                            else: bg, border, txt = "rgba(255,204,0,0.1)", "#ffcc00", "#ffcc00"; p_str = "$0"
-                        st.markdown(f'<div style="background:{bg}; border:1px solid {border}; border-radius:12px; padding:10px; height:90px; text-align:center; margin-bottom:5px;"><div style="font-size:0.7rem; color:#888;">{d_num}</div><div style="color:{txt}; font-weight:bold; font-size:0.85rem;">{p_str}</div><div style="font-size:0.5rem; color:#00d4ff;">{f"{len(day_trades)} T" if len(day_trades)>0 else ""}</div></div>', unsafe_allow_html=True)
-        
-        st.markdown("---")
-        sel_day = st.selectbox("Review Day:", sorted(df['date_dt'].dt.day.unique()))
-        st.dataframe(df[df['date_dt'].dt.day == sel_day][['date', 'pair', 'outcome', 'pnl', 'rr']], use_container_width=True)
+                        bg, border, txt, p_str = "rgba(255,255,255,0.02)", "rgba(255,255,255,0.05)", "#444", ""
+                        if not day_trades.empty:
+                            if d_pnl > 0: bg, border, txt, p_str = "rgba(0,255,204,0.1)", "#00ffcc", "#00ffcc", f"+${d_pnl:,.0f}"
+                            elif d_pnl < 0: bg, border, txt, p_str = "rgba(255,75,75,0.1)", "#ff4b4b", "#ff4b4b", f"-${abs(d_pnl):,.0f}"
+                        st.markdown(f'<div style="background:{bg}; border:1px solid {border}; border-radius:12px; padding:10px; height:90px; text-align:center;"><div style="font-size:0.7rem;">{d_num}</div><div style="color:{txt}; font-weight:bold;">{p_str}</div></div>', unsafe_allow_html=True)
 
-# --- 7. PERFORMANCE (FULL VERSION) ---
-elif choice == "PERFORMANCE":
-    if not df.empty:
-        wins = df[df['pnl'] > 0]
-        losses = df[df['pnl'] < 0]
-        wr = (len(wins)/len(df))*100
-        avg_rr = df['rr'].mean()
-        sum_w, sum_l = wins['pnl'].sum(), abs(losses['pnl'].sum())
-        tf = sum_w / sum_l if sum_l != 0 else sum_w
-        consistency = max(0, min(100, 100 - ((df['pnl'].std() / abs(df['pnl'].mean())) * 10))) if len(df)>2 else 0
-
-        c_g, c_s = st.columns([1, 1.5])
-        with c_g:
-            fig_g = go.Figure(go.Indicator(mode="gauge+number", value=wr, number={'suffix':"%", 'font':{'family':'Rajdhani'}}, gauge={'bar':{'color':"#00ffcc"}}))
-            fig_g.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig_g, use_container_width=True)
-        with c_s:
-            r1 = st.columns(3)
-            r1[0].markdown(f'<div class="perf-card"><h4>{avg_rr:.2f}</h4><p>Avg RR</p></div>', unsafe_allow_html=True)
-            r1[1].markdown(f'<div class="perf-card"><h4>{tf:.2f}</h4><p>Factor</p></div>', unsafe_allow_html=True)
-            r1[2].markdown(f'<div class="perf-card"><h4>{consistency:.0f}%</h4><p>Consistency</p></div>', unsafe_allow_html=True)
-            r2 = st.columns(2)
-            r2[0].markdown(f'<div class="perf-card"><h4 style="color:#00ffcc">${df["pnl"].max():,.0f}</h4><p>Best</p></div>', unsafe_allow_html=True)
-            r2[1].markdown(f'<div class="perf-card"><h4 style="color:#ff4b4b">${df["pnl"].min():,.0f}</h4><p>Worst</p></div>', unsafe_allow_html=True)
-        
-        net = df['pnl'].sum()
-        st.markdown(f'<div style="text-align:center; margin-top:30px;"><p style="color:#888;">TOTAL NET PROFIT</p><h1 style="color:{"#00ffcc" if net>=0 else "#ff4b4b"}; font-size:3.5rem; font-family:Rajdhani;">${net:,.2f}</h1></div>', unsafe_allow_html=True)
-
-# --- 8. JOURNAL (COLORED) ---
 elif choice == "JOURNAL":
     if not df.empty:
         for _, row in df.sort_values('id', ascending=False).iterrows():
@@ -207,17 +205,14 @@ elif choice == "JOURNAL":
             st.markdown(f'<div class="{j_class}">', unsafe_allow_html=True)
             with st.expander(f"● {row['date']} | {row['pair']} | ${row['pnl']:,.2f}"):
                 tx, im = st.columns([1, 1.5])
-                with tx:
-                    st.write(f"**Setup:** {row['setup']}")
-                    st.info(f"Comment: {row['comment']}")
-                with im:
+                with tx: st.write(f"**Setup:** {row['setup']}"); st.info(f"Comment: {row['comment']}")
+                with im: 
                     if row['image']: st.image(base64.b64decode(row['image']), use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 9. ARCHIVE ---
 elif choice == "ARCHIVE":
     if not df.empty:
         df['m'] = df['date_dt'].dt.strftime('%B %Y')
         for m in df['m'].unique():
             with st.expander(f"📁 {m.upper()} | Net: ${df[df['m']==m]['pnl'].sum():,.2f}"):
-                st.dataframe(df[df['m']==m][['date', 'pair', 'outcome', 'pnl', 'setup', 'comment']], use_container_width=True)
+                st.dataframe(df[df['m']==m][['date', 'pair', 'outcome', 'pnl', 'setup']], use_container_width=True)
