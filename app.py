@@ -2,183 +2,178 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime
 import sqlite3
 import calendar
 import base64
-from io import BytesIO
-from PIL import Image
 
-# --- SETTINGS ---
+# --- إعدادات الصفحة ---
 st.set_page_config(page_title="369 SHADOW V43", layout="wide")
 
+# --- CSS لتصميم Modern Neon ---
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
 
 .stApp { background: #05070a; color: #e6edf3; font-family: 'Inter', sans-serif; }
 
-/* Welcome */
-.welcome-text { font-family: 'Orbitron'; color: #00d4ff; font-size: 1.6rem; text-align: center; margin-bottom: 25px; text-shadow: 0 0 20px rgba(0,212,255,0.8); letter-spacing: 2px; }
-
-/* Animation 0.5s */
-.content-fade { animation: slideUp 0.5s ease-out; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Sidebar Neon */
-[data-testid="stSidebar"] { background-color: #080b10; border-right: 2px solid #00d4ff33; padding-top: 30px; }
-div[data-testid="stSidebar"] .stRadio > label { display:none; }
-div[data-testid="stSidebar"] .stRadio div[role="radiogroup"] { gap:20px; padding-top:20px; }
-div[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(0,212,255,0.2);
-    padding: 20px; border-radius: 15px;
-    width:100%; color:#8b949e;
-    font-family:'Orbitron'; text-transform:uppercase; font-size:0.9rem;
-    transition: 0.3s all;
-}
-div[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label[data-baseweb='radio']:has(input:checked) {
-    background: rgba(0,212,255,0.15) !important;
-    border: 1px solid #00d4ff !important; color:#00ffcc !important;
-    box-shadow: 0 0 20px #00d4ff66;
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: #080b10;
+    border-right: 2px solid #00d4ff33;
 }
 
-/* Journal Colors */
-.journal-win { border-left: 5px solid #34d399 !important; background: rgba(52, 211, 153, 0.05) !important; }
-.journal-loss { border-left: 5px solid #ef4444 !important; background: rgba(239, 68, 68, 0.05) !important; }
-.journal-be { border-left: 5px solid #fbbf24 !important; background: rgba(251, 191, 36, 0.05) !important; }
+/* Neon Cards */
+.metric-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+}
 
-/* Performance Cards */
-.perf-card { background: rgba(22, 27, 34, 0.6); border: 1px solid rgba(0, 212, 255, 0.1); padding:20px; border-radius:15px; text-align:center; transition:0.3s; }
-.perf-card:hover { border-color:#00d4ff; box-shadow: 0 0 15px #00ffcc33; }
-.perf-val { font-size:1.8rem; font-weight:bold; font-family:'Orbitron'; color:#e6edf3; }
-.perf-label { font-size:0.75rem; color:#00d4ff; text-transform:uppercase; letter-spacing:2px; margin-top:5px; }
+/* Journal Status Colors */
+.win-card { border-left: 5px solid #00ffcc !important; background: rgba(0, 255, 204, 0.05) !important; margin-bottom: 10px; border-radius: 8px; }
+.loss-card { border-left: 5px solid #ff4b4b !important; background: rgba(255, 75, 75, 0.05) !important; margin-bottom: 10px; border-radius: 8px; }
+.be-card { border-left: 5px solid #ffcc00 !important; background: rgba(255, 204, 0, 0.05) !important; margin-bottom: 10px; border-radius: 8px; }
+
+/* Welcome Text */
+.welcome-header {
+    font-family: 'Orbitron';
+    color: #00d4ff;
+    text-align: center;
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+    letter-spacing: 2px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# --- DATABASE ---
-conn = sqlite3.connect('elite_v43.db', check_same_thread=False)
+# --- قاعدة البيانات ---
+conn = sqlite3.connect('shadow_v43.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS trades 
-(id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, pair TEXT, outcome TEXT, pnl REAL, rr REAL, balance REAL, mindset TEXT, setup TEXT, image TEXT, month_archive TEXT)''')
+             (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, pair TEXT, outcome TEXT, 
+              pnl REAL, rr REAL, setup_name TEXT, setup_desc TEXT, mindset_type TEXT, 
+              mindset_desc TEXT, image TEXT, month_year TEXT)''')
 conn.commit()
 
-# --- DATA ---
+# --- التحميل والمعالجة ---
 df = pd.read_sql_query("SELECT * FROM trades", conn)
-current_balance = df['balance'].iloc[-1] if not df.empty else 1000.0
-daily_net_pnl = df[df['date']==datetime.now().strftime('%Y-%m-%d')]['pnl'].sum() if not df.empty else 0.0
+if not df.empty:
+    df['date'] = pd.to_datetime(df['date'])
+    df['month_year'] = df['date'].dt.strftime('%B %Y')
 
-# --- SIDEBAR ---
+# --- SIDEBAR MODERN ---
 with st.sidebar:
-    st.markdown(f"<div style='text-align:center; font-family:Orbitron; font-size:1.6rem; color:#00ffcc;'>ACCOUNT: ${current_balance:,.2f}</div>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color:#00ffcc; font-family:Orbitron; font-size:1.2rem;'>SHADOW TERMINAL</h1>", unsafe_allow_html=True)
+    
+    # إدخال مبلغ الحساب
+    account_balance = st.number_input("ACCOUNT BALANCE ($)", value=1000.0, step=100.0)
+    
     st.divider()
-    choice = st.radio("MENU", ["TERMINAL", "CALENDAR", "PERFORMANCE", "ANALYZERS", "JOURNAL", "LAST 12 MONTHS"])
+    menu = st.radio("NAVIGATION", ["TERMINAL", "DASHBOARD", "JOURNAL", "CALENDAR"])
+    
+    # اختيار الشهر للأرشفة
     st.divider()
+    if not df.empty:
+        available_months = df['month_year'].unique().tolist()
+        selected_month = st.selectbox("ARCHIVE (SELECT MONTH)", available_months)
+        filtered_df = df[df['month_year'] == selected_month]
+    else:
+        st.info("No data yet.")
+        filtered_df = pd.DataFrame()
 
-# --- WELCOME ---
-st.markdown('<div class="welcome-text">WHAT\'S UP SHADOW, LET\'S SEE WHAT HAPPENED TODAY.</div>', unsafe_allow_html=True)
+st.markdown(f'<h2 class="welcome-header">SYSTEM STATUS: {menu}</h2>', unsafe_allow_html=True)
 
-# --- MAIN CONTENT ---
-st.markdown('<div class="content-fade">', unsafe_allow_html=True)
-
-# ------------------- TERMINAL -------------------
-if choice=="TERMINAL":
-    c1,c2 = st.columns([1,2.3])
-    with c1:
-        with st.form("entry_form"):
-            st.markdown("### 📥 LOG ENTRY")
-            d_in = st.date_input("Date", datetime.now())
-            asset = st.text_input("Pair", "NAS100").upper()
-            res = st.selectbox("Outcome", ["WIN","LOSS","BE"])
-            p_val = st.number_input("P&L ($)", value=0.0)
-            r_val = st.number_input("RR Ratio", value=0.0)
-            setup = st.text_input("Setup").upper()
-            mind = st.selectbox("Mindset", ["Focused","Impulsive","Revenge","Bored"])
-            img_file = st.file_uploader("Screenshot", type=['png','jpg','jpeg'])
+# ------------------- 1. TERMINAL (Entry) -------------------
+if menu == "TERMINAL":
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        with st.form("trade_form", clear_on_submit=True):
+            st.markdown("### 📥 LOG NEW TRADE")
+            t_date = st.date_input("Date", datetime.now())
+            t_pair = st.text_input("Pair", "NAS100")
+            t_out = st.selectbox("Outcome", ["WIN", "LOSS", "BE"])
+            t_pnl = st.number_input("P&L ($)", step=1.0)
+            t_rr = st.number_input("RR Ratio", step=0.1)
+            
+            st.divider()
+            t_setup = st.text_input("Setup Name (Short)")
+            t_setup_desc = st.text_area("Setup Description (Why you took it?)")
+            
+            t_mind = st.selectbox("Mindset Status", ["Focused", "Impulsive", "Revenge", "Bored"])
+            t_mind_desc = st.text_area("Psychology Notes")
+            
             if st.form_submit_button("LOCK TRADE"):
-                img_data = base64.b64encode(img_file.read()).decode() if img_file else None
-                month_archive = datetime.now().strftime("%Y-%m")
-                c.execute("INSERT INTO trades (date,pair,outcome,pnl,rr,balance,mindset,setup,image,month_archive) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                          (str(d_in), asset, res, p_val, r_val, current_balance, mind, setup, img_data, month_archive))
+                m_y = t_date.strftime('%B %Y')
+                c.execute("""INSERT INTO trades (date, pair, outcome, pnl, rr, setup_name, setup_desc, 
+                             mindset_type, mindset_desc, month_year) VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                          (str(t_date), t_pair.upper(), t_out, t_pnl, t_rr, t_setup, t_setup_desc, t_mind, t_mind_desc, m_y))
                 conn.commit()
-                st.experimental_rerun()
-    with c2:
-        if not df.empty:
-            df = pd.read_sql_query("SELECT * FROM trades", conn).sort_values(by=['date'])
-            df['cum_pnl'] = df['pnl'].cumsum()
-            df['equity_curve'] = df['balance'].iloc[0]+df['cum_pnl']
-            fig = go.Figure(go.Scatter(x=list(range(len(df))), y=df['equity_curve'], mode='lines+markers',
-                                       line=dict(color='#00ffcc', width=3, shape='spline'),
-                                       fill='tonexty', fillcolor='rgba(0,255,204,0.05)'))
-            fig.update_layout(template="plotly_dark", height=480, title="ACCOUNT GROWTH CURVE", transition={'duration':500})
+                st.success("Trade Recorded Successfully!")
+                st.rerun()
+    
+    with col2:
+        st.markdown("### 📈 QUICK VIEW")
+        if not filtered_df.empty:
+            fig = px.line(filtered_df.sort_values('date'), x='date', y='pnl', title="Monthly P&L Curve")
+            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig, use_container_width=True)
 
-# ------------------- CALENDAR -------------------
-elif choice=="CALENDAR":
-    if not df.empty:
-        today = datetime.now()
-        cal = calendar.monthcalendar(today.year, today.month)
-        cols = st.columns(7)
-        for i, d_name in enumerate(["MON","TUE","WED","THU","FRI","SAT","SUN"]):
-            cols[i].markdown(f"<p style='text-align:center; color:#00d4ff; font-family:Orbitron; font-size:0.7rem;'>{d_name}</p>", unsafe_allow_html=True)
-        for week in cal:
-            cols = st.columns(7)
-            for i, day in enumerate(week):
-                if day==0: cols[i].markdown('<div style="opacity:0.1"></div>', unsafe_allow_html=True)
-                else:
-                    d_str = datetime(today.year,today.month,day).strftime('%Y-%m-%d')
-                    day_df = df[df['date']==d_str]
-                    p_sum = day_df['pnl'].sum()
-                    style = "journal-win" if p_sum>0 else "journal-loss" if p_sum<0 else "journal-be" if len(day_df)>0 else ""
-                    cols[i].markdown(f'<div class="{style}" style="padding:5px; text-align:center;"><div>{day}</div><div>${p_sum:,.0f}</div></div>', unsafe_allow_html=True)
+# ------------------- 2. DASHBOARD (Performance) -------------------
+elif menu == "DASHBOARD":
+    if not filtered_df.empty:
+        m1, m2, m3, m4 = st.columns(4)
+        net_pnl = filtered_df['pnl'].sum()
+        win_rate = (len(filtered_df[filtered_df['outcome'] == 'WIN']) / len(filtered_df)) * 100
+        
+        m1.markdown(f'<div class="metric-card"><small>NET P&L</small><br><b style="color:#00ffcc; font-size:1.5rem;">${net_pnl:,.2f}</b></div>', unsafe_allow_html=True)
+        m2.markdown(f'<div class="metric-card"><small>WIN RATE</small><br><b style="color:#00ffcc; font-size:1.5rem;">{win_rate:.1f}%</b></div>', unsafe_allow_html=True)
+        m3.markdown(f'<div class="metric-card"><small>AVG RR</small><br><b style="color:#00ffcc; font-size:1.5rem;">{filtered_df["rr"].mean():.2f}</b></div>', unsafe_allow_html=True)
+        m4.markdown(f'<div class="metric-card"><small>NEW BALANCE</small><br><b style="color:#00ffcc; font-size:1.5rem;">${(account_balance + net_pnl):,.2f}</b></div>', unsafe_allow_html=True)
+        
+        st.divider()
+        c1, c2 = st.columns(2)
+        with c1:
+            st.plotly_chart(px.pie(filtered_df, names='mindset_type', values='pnl', title="P&L by Mindset", hole=0.4, template="plotly_dark"), use_container_width=True)
+        with c2:
+            st.plotly_chart(px.bar(filtered_df, x='setup_name', y='pnl', color='outcome', title="Setup Performance", template="plotly_dark"), use_container_width=True)
 
-# ------------------- PERFORMANCE -------------------
-elif choice=="PERFORMANCE":
-    if not df.empty:
-        wins, losses = df[df['pnl']>0], df[df['pnl']<0]
-        wr = (len(wins)/len(df))*100 if len(df)>0 else 0
-        pf = wins['pnl'].sum()/abs(losses['pnl'].sum()) if not losses.empty else 0
-        st.markdown("#### ⚡ PRIMARY METRICS")
-        g1,g2,g3,g4 = st.columns(4)
-        for col,label,val in zip([g1,g2,g3,g4], ["Win Rate","Profit Factor","Avg RR","Net P&L"],
-                                [f"{wr:.1f}%","{:.2f}".format(pf),f"{df['rr'].mean():.2f}",f"${df['pnl'].sum():,.0f}"]):
-            col.markdown(f'<div class="perf-card"><div class="perf-val">{val}</div><div class="perf-label">{label}</div></div>', unsafe_allow_html=True)
-
-# ------------------- ANALYZERS -------------------
-elif choice=="ANALYZERS":
-    if not df.empty:
-        fig_rr = go.Figure(data=[go.Scatter(x=list(range(len(df))), y=df['rr'], mode='lines+markers',
-                                           line=dict(color='#fbbf24', width=2))])
-        fig_rr.update_layout(template="plotly_dark", title="RR CONSISTENCY", transition={'duration':500})
-        st.plotly_chart(fig_rr, use_container_width=True)
-        pnl_mindset = df.groupby('mindset')['pnl'].sum().reset_index()
-        st.plotly_chart(px.bar(pnl_mindset, x='mindset', y='pnl', title="PSYCHOLOGY IMPACT", template="plotly_dark"), use_container_width=True)
-
-# ------------------- JOURNAL -------------------
-elif choice=="JOURNAL":
-    if not df.empty:
-        st.markdown("### 📜 TRADE ARCHIVE")
-        for idx,row in df.sort_values('id',ascending=False).iterrows():
-            j_class = "journal-win" if row['pnl']>0 else "journal-loss" if row['pnl']<0 else "journal-be"
+# ------------------- 3. JOURNAL (Detailed) -------------------
+elif menu == "JOURNAL":
+    if not filtered_df.empty:
+        for idx, row in filtered_df.sort_values('date', ascending=False).iterrows():
+            # تحديد الكلاس بناء على النتيجة
+            card_style = "win-card" if row['outcome'] == "WIN" else "loss-card" if row['outcome'] == "LOSS" else "be-card"
+            
             with st.container():
-                st.markdown(f'<div class="{j_class}" style="padding:10px; border-radius:0 10px 10px 0; margin-bottom:10px;">', unsafe_allow_html=True)
-                with st.expander(f"● {row['date']} | {row['pair']} | P&L: ${row['pnl']:,.2f} | Setup: {row['setup']}"):
-                    tx, im = st.columns([1,2])
-                    with tx:
-                        st.write(f"**Outcome:** {row['outcome']}")
-                        st.write(f"**RR:** {row['rr']} | **Mindset:** {row['mindset']}")
-                    with im:
-                        if row['image']: st.image(base64.b64decode(row['image']), use_container_width=True)
+                st.markdown(f'<div class="{card_style}">', unsafe_allow_html=True)
+                with st.expander(f"➔ {row['date'].strftime('%Y-%m-%d')} | {row['pair']} | P&L: ${row['pnl']} | {row['outcome']}"):
+                    a, b = st.columns(2)
+                    with a:
+                        st.markdown(f"**Setup:** {row['setup_name']}")
+                        st.info(f"**Description:** {row['setup_desc']}")
+                    with b:
+                        st.markdown(f"**Mindset:** {row['mindset_type']}")
+                        st.warning(f"**Notes:** {row['mindset_desc']}")
                 st.markdown('</div>', unsafe_allow_html=True)
 
-# ------------------- LAST 12 MONTHS -------------------
-elif choice=="LAST 12 MONTHS":
-    last_12 = df.copy()
-    last_12['date_dt'] = pd.to_datetime(last_12['date'])
-    last_12['month'] = last_12['date_dt'].dt.to_period('M')
-    last_12 = last_12.groupby('month')['pnl'].sum().tail(12).reset_index()
-    last_12['pct'] = (last_12['pnl']/current_balance)*100
-    fig12 = px.bar(last_12, x='month', y='pct', text='pct', title="LAST 12 MONTHS P&L %", template="plotly_dark")
-    st.plotly_chart(fig12, use_container_width=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
+# ------------------- 4. CALENDAR -------------------
+elif menu == "CALENDAR":
+    if not filtered_df.empty:
+        # عرض ملخص بسيط لكل يوم في الشهر المختار
+        cal_df = filtered_df.groupby(filtered_df['date'].dt.day)['pnl'].sum().reset_index()
+        st.markdown(f"### 📅 {selected_month} Calendar View")
+        
+        # عرض مربعات الأيام (تجريبي)
+        cols = st.columns(7)
+        for i, row in cal_df.iterrows():
+            with cols[int(i%7)]:
+                color = "#00ffcc" if row['pnl'] > 0 else "#ff4b4b" if row['pnl'] < 0 else "#ffcc00"
+                st.markdown(f"""
+                <div style="background:rgba(255,255,255,0.05); border:1px solid {color}; border-radius:10px; padding:10px; text-align:center; margin-bottom:10px;">
+                    <small>Day {int(row['date'])}</small><br>
+                    <b style="color:{color}">${row['pnl']}</b>
+                </div>
+                """, unsafe_allow_html=True)
