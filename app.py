@@ -14,53 +14,22 @@ st.set_page_config(page_title="369 SHADOW PRO", layout="wide")
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Lexend:wght@300;500&display=swap');
-
 .stApp { background: #050508; color: #eef2f6; font-family: 'Lexend', sans-serif; }
-
-.welcome-text { 
-    font-family: 'Rajdhani'; color: #00d4ff; font-size: 1.6rem; text-align: center; 
-    font-weight: 700; margin-bottom: 25px; text-shadow: 0 0 10px rgba(0,212,255,0.4); 
-}
-
-/* Sidebar Styling - NEON PURPLE ROUNDED */
+.welcome-text { font-family: 'Rajdhani'; color: #00d4ff; font-size: 1.6rem; text-align: center; font-weight: 700; margin-bottom: 25px; text-shadow: 0 0 10px rgba(0,212,255,0.4); }
 [data-testid="stSidebar"] { background-color: #080810; border-right: 2px solid #bc13fe33; }
-
-.equity-box { 
-    background: rgba(188, 19, 254, 0.05); border: 1px solid #bc13fe; 
-    border-radius: 20px; padding: 15px; text-align: center; margin-bottom: 20px; 
-    box-shadow: 0 0 10px rgba(188,19,254,0.2);
-}
-
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
-    background: rgba(188, 19, 254, 0.02) !important;
-    border: 1px solid rgba(188, 19, 254, 0.3) !important;
-    padding: 12px 20px !important;
-    border-radius: 15px !important;
-    color: #8b949e; font-family: 'Rajdhani'; font-size: 1rem;
-    margin-bottom: 8px; transition: 0.3s;
-}
-
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
-    border: 1px solid #bc13fe !important; color: #bc13fe !important; 
-    box-shadow: 0 0 15px rgba(188,19,254,0.4); background: rgba(188, 19, 254, 0.1) !important;
-}
-
-/* Journal States */
+.equity-box { background: rgba(188, 19, 254, 0.05); border: 1px solid #bc13fe; border-radius: 20px; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 0 10px rgba(188,19,254,0.2); }
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label { background: rgba(188, 19, 254, 0.02) !important; border: 1px solid rgba(188, 19, 254, 0.3) !important; padding: 12px 20px !important; border-radius: 15px !important; color: #8b949e; font-family: 'Rajdhani'; font-size: 1rem; margin-bottom: 8px; transition: 0.3s; }
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) { border: 1px solid #bc13fe !important; color: #bc13fe !important; box-shadow: 0 0 15px rgba(188,19,254,0.4); background: rgba(188, 19, 254, 0.1) !important; }
+.perf-card { background: rgba(20, 20, 30, 0.8); border: 1px solid #bc13fe33; padding: 20px; border-radius: 20px; text-align: center; }
+.perf-card h4 { font-family: 'Rajdhani'; color: #bc13fe; font-size: 1.8rem; margin:0; }
+.perf-card p { font-size: 0.8rem; color: #64748b; text-transform: uppercase; margin-top:5px; }
 .journal-win { border-left: 5px solid #00ffcc; background: rgba(0, 255, 204, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
 .journal-loss { border-left: 5px solid #ff4b4b; background: rgba(255, 75, 75, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
 .journal-be { border-left: 5px solid #ffcc00; background: rgba(255, 204, 0, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
-
-/* Performance Cards */
-.perf-card { 
-    background: rgba(20, 20, 30, 0.8); border: 1px solid #bc13fe33; 
-    padding: 20px; border-radius: 20px; text-align: center; 
-}
-.perf-card h4 { font-family: 'Rajdhani'; color: #bc13fe; font-size: 1.8rem; margin:0; }
-.perf-card p { font-size: 0.8rem; color: #64748b; text-transform: uppercase; margin-top:5px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. MULTI-ACCOUNT SYSTEM ---
+# --- 2. MULTI-ACCOUNT SYSTEM (رجوع الـ Sidebar الأصلي) ---
 with st.sidebar:
     st.markdown('<div style="font-family:Rajdhani; color:#bc13fe; font-size:1.5rem; font-weight:700; text-align:center; padding-bottom:15px;">SHADOW SYSTEM</div>', unsafe_allow_html=True)
     
@@ -77,8 +46,16 @@ with st.sidebar:
     db_path = f"tracker_{acc_name.lower()}.db"
     conn = sqlite3.connect(db_path, check_same_thread=False)
     c = conn.cursor()
+    
+    # تأمين الأعمدة (timestamp)
+    try:
+        c.execute("SELECT timestamp FROM trades LIMIT 1")
+    except:
+        c.execute("ALTER TABLE trades ADD COLUMN timestamp TEXT")
+        conn.commit()
+
     c.execute('''CREATE TABLE IF NOT EXISTS trades 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, pair TEXT, 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, timestamp TEXT, pair TEXT, 
                   outcome TEXT, pnl REAL, rr REAL, balance REAL, mindset TEXT, 
                   setup TEXT, comment TEXT, setup_desc TEXT, image TEXT)''')
     conn.commit()
@@ -94,21 +71,12 @@ if not df.empty:
 
 # --- 4. SIDEBAR EQUITY & MENU ---
 with st.sidebar:
-    st.markdown(f"""
-    <div class="equity-box">
-        <div style="font-family:Rajdhani; font-size:0.7rem; color:#bc13fe;">{acc_name.upper()} EQUITY</div>
-        <div style="font-size:1.8rem; font-weight:700;">${current_bal:,.2f}</div>
-        <div style="font-size:0.8rem; color:{'#00ffcc' if daily_pnl >= 0 else '#ff4b4b'};">
-            {daily_pnl:+.2f} USD TODAY
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    choice = st.radio("MENU", ["TERMINAL", "CALENDAR", "PERFORMANCE", "JOURNAL", "ARCHIVE"])
+    st.markdown(f'<div class="equity-box"><div style="font-family:Rajdhani; font-size:0.7rem; color:#bc13fe;">{acc_name.upper()} EQUITY</div><div style="font-size:1.8rem; font-weight:700;">${current_bal:,.2f}</div><div style="font-size:0.8rem; color:{"#00ffcc" if daily_pnl >= 0 else "#ff4b4b"};">{daily_pnl:+.2f} USD TODAY</div></div>', unsafe_allow_html=True)
+    choice = st.radio("MENU", ["TERMINAL", "CALENDAR", "WEEKLY ANALYSIS", "PERFORMANCE", "JOURNAL", "ARCHIVE"])
 
 st.markdown('<div class="welcome-text">SYSTEM ONLINE. ANALYZING SHADOW PERFORMANCE.</div>', unsafe_allow_html=True)
 
-# --- 5. TERMINAL ---
+# --- 5. TERMINAL (Fixed Time & %) ---
 if choice == "TERMINAL":
     c1, c2 = st.columns([1, 2.3])
     with c1:
@@ -123,83 +91,79 @@ if choice == "TERMINAL":
             comment = st.text_area("Notes")
             img_file = st.file_uploader("Screenshot", type=['png', 'jpg'])
             if st.form_submit_button("LOCK TRADE"):
+                now_ts = datetime.now().strftime('%H:%M:%S')
                 img_data = base64.b64encode(img_file.read()).decode() if img_file else None
-                c.execute("INSERT INTO trades (date, pair, outcome, pnl, rr, balance, setup, comment, image) VALUES (?,?,?,?,?,?,?,?,?)",
-                          (str(d_in), asset, res, p_val, r_val, current_bal, setup, comment, img_data))
+                c.execute("INSERT INTO trades (date, timestamp, pair, outcome, pnl, rr, balance, setup, comment, image) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                          (str(d_in), now_ts, asset, res, p_val, r_val, current_bal, setup, comment, img_data))
                 conn.commit()
                 st.rerun()
     with c2:
         if not df.empty:
-            df_chart = df.sort_values(by='date_dt')
-            df_chart['equity_curve'] = init_amount + df_chart['pnl'].cumsum()
-            fig = px.line(df_chart, x='date', y='equity_curve', title="GROWTH CURVE")
-            fig.update_traces(line_color='#bc13fe', line_width=3)
-            fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani")
+            df['timestamp'] = df['timestamp'].fillna("00:00:00")
+            df['full_time'] = pd.to_datetime(df['date'] + " " + df['timestamp'])
+            df_chart = df.sort_values(by='full_time')
+            df_chart['pnl_percent'] = (df_chart['pnl'].cumsum() / init_amount) * 100
+            
+            last_val = df_chart['pnl_percent'].iloc[-1]
+            l_color = "#00ffcc" if last_val > 0 else "#ff4b4b" if last_val < 0 else "#ffcc00"
+            f_color = f"rgba({int(l_color[1:3], 16)}, {int(l_color[3:5], 16)}, {int(l_color[5:7], 16)}, 0.1)"
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=df_chart['full_time'], y=df_chart['pnl_percent'], mode='lines+markers',
+                                     line=dict(color=l_color, width=3, shape='spline'), fill='tozeroy', fillcolor=f_color,
+                                     marker=dict(size=8, color=l_color)))
+            fig.add_hline(y=0, line_dash="dash", line_color="#444")
+            fig.update_layout(title="EQUITY CURVE (%)", template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani", yaxis_ticksuffix="%")
             st.plotly_chart(fig, use_container_width=True)
 
-# --- 6. CALENDAR ---
-elif choice == "CALENDAR":
+# --- 6. WEEKLY ANALYSIS ---
+elif choice == "WEEKLY ANALYSIS":
     if not df.empty:
-        first_day = df['date_dt'].min().replace(day=1)
-        _, last_day_num = calendar.monthrange(first_day.year, first_day.month)
-        st.markdown(f"<h2 style='text-align:center; color:#00d4ff; font-family:Rajdhani;'>{first_day.strftime('%B %Y').upper()}</h2>", unsafe_allow_html=True)
+        df['date_dt'] = pd.to_datetime(df['date'])
+        df['week'] = df['date_dt'].dt.isocalendar().week
+        df['day_name'] = df['date_dt'].dt.day_name()
         
-        cols_h = st.columns(7)
-        for i, wd in enumerate(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]):
-            cols_h[i].markdown(f"<div style='text-align:center; color:#00ffcc; font-size:0.8rem; border-bottom:1px solid #333;'>{wd}</div>", unsafe_allow_html=True)
+        st.subheader("📊 Daily Performance (%)")
+        daily_perf = df.groupby('day_name')['pnl'].sum().reset_index()
+        daily_perf['pnl_%'] = (daily_perf['pnl'] / init_amount) * 100
+        days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        daily_perf['day_name'] = pd.Categorical(daily_perf['day_name'], categories=days_order, ordered=True)
+        daily_perf = daily_perf.sort_values('day_name')
         
-        start_padding = first_day.weekday()
-        for row in range(0, start_padding + last_day_num, 7):
-            cols = st.columns(7)
-            for i in range(7):
-                idx = row + i
-                with cols[i]:
-                    if start_padding <= idx < start_padding + last_day_num:
-                        d_num = idx - start_padding + 1
-                        curr_date = first_day.replace(day=d_num)
-                        day_trades = df[df['date_dt'].dt.date == curr_date.date()]
-                        d_pnl = day_trades['pnl'].sum()
-                        bg, border, txt = "rgba(255,255,255,0.02)", "rgba(255,255,255,0.05)", "#444"
-                        p_str = ""
-                        if len(day_trades) > 0:
-                            if d_pnl > 0: bg, border, txt = "rgba(0,255,204,0.1)", "#00ffcc", "#00ffcc"; p_str = f"+${d_pnl:,.0f}"
-                            elif d_pnl < 0: bg, border, txt = "rgba(255,75,75,0.1)", "#ff4b4b", "#ff4b4b"; p_str = f"-${abs(d_pnl):,.0f}"
-                            else: bg, border, txt = "rgba(255,204,0,0.1)", "#ffcc00", "#ffcc00"; p_str = "$0"
-                        st.markdown(f'<div style="background:{bg}; border:1px solid {border}; border-radius:12px; padding:10px; height:90px; text-align:center; margin-bottom:5px;"><div style="font-size:0.7rem; color:#888;">{d_num}</div><div style="color:{txt}; font-weight:bold; font-size:0.85rem;">{p_str}</div><div style="font-size:0.5rem; color:#00d4ff;">{f"{len(day_trades)} T" if len(day_trades)>0 else ""}</div></div>', unsafe_allow_html=True)
+        fig_day = px.line(daily_perf, x='day_name', y='pnl_%', markers=True)
+        fig_day.update_traces(line_color='#00d4ff', fill='tozeroy')
+        fig_day.update_layout(template="plotly_dark", yaxis_ticksuffix="%")
+        st.plotly_chart(fig_day, use_container_width=True)
         
-        st.markdown("---")
-        sel_day = st.selectbox("Review Day:", sorted(df['date_dt'].dt.day.unique()))
-        st.dataframe(df[df['date_dt'].dt.day == sel_day][['date', 'pair', 'outcome', 'pnl', 'rr']], use_container_width=True)
+        st.subheader("📅 Weekly Return (%) - Last 4 Weeks")
+        weekly_perf = df.groupby('week')['pnl'].sum().reset_index()
+        weekly_perf['pnl_%'] = (weekly_perf['pnl'] / init_amount) * 100
+        fig_week = px.bar(weekly_perf.tail(4), x='week', y='pnl_%', color='pnl_%', color_continuous_scale='RdYlGn')
+        fig_week.update_layout(template="plotly_dark", yaxis_ticksuffix="%")
+        st.plotly_chart(fig_week, use_container_width=True)
 
-# --- 7. PERFORMANCE ---
+# --- 7. PERFORMANCE (Correct Profit Factor) ---
 elif choice == "PERFORMANCE":
     if not df.empty:
-        wins = df[df['pnl'] > 0]
-        losses = df[df['pnl'] < 0]
-        wr = (len(wins)/len(df))*100
+        gross_profit = df[df['pnl'] > 0]['pnl'].sum()
+        gross_loss = abs(df[df['pnl'] < 0]['pnl'].sum())
+        pf = gross_profit / gross_loss if gross_loss != 0 else gross_profit
+        wr = (len(df[df['pnl'] > 0])/len(df))*100
         avg_rr = df['rr'].mean()
-        sum_w, sum_l = wins['pnl'].sum(), abs(losses['pnl'].sum())
-        tf = sum_w / sum_l if sum_l != 0 else sum_w
-        consistency = max(0, min(100, 100 - ((df['pnl'].std() / abs(df['pnl'].mean())) * 10))) if len(df)>2 else 0
 
         c_g, c_s = st.columns([1, 1.5])
         with c_g:
-            fig_g = go.Figure(go.Indicator(mode="gauge+number", value=wr, number={'suffix':"%", 'font':{'family':'Rajdhani'}}, gauge={'bar':{'color':"#00ffcc"}}))
-            fig_g.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig_g, use_container_width=True)
+            st.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=wr, number={'suffix':"%"})).update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)'))
         with c_s:
             r1 = st.columns(3)
             r1[0].markdown(f'<div class="perf-card"><h4>{avg_rr:.2f}</h4><p>Avg RR</p></div>', unsafe_allow_html=True)
-            r1[1].markdown(f'<div class="perf-card"><h4>{tf:.2f}</h4><p>Factor</p></div>', unsafe_allow_html=True)
-            r1[2].markdown(f'<div class="perf-card"><h4>{consistency:.0f}%</h4><p>Consistency</p></div>', unsafe_allow_html=True)
-            r2 = st.columns(2)
-            r2[0].markdown(f'<div class="perf-card"><h4 style="color:#00ffcc">${df["pnl"].max():,.0f}</h4><p>Best</p></div>', unsafe_allow_html=True)
-            r2[1].markdown(f'<div class="perf-card"><h4 style="color:#ff4b4b">${df["pnl"].min():,.0f}</h4><p>Worst</p></div>', unsafe_allow_html=True)
+            r1[1].markdown(f'<div class="perf-card"><h4>{pf:.2f}</h4><p>Profit Factor</p></div>', unsafe_allow_html=True)
+            r1[2].markdown(f'<div class="perf-card"><h4>{wr:.0f}%</h4><p>Win Rate</p></div>', unsafe_allow_html=True)
         
         net = df['pnl'].sum()
-        st.markdown(f'<div style="text-align:center; margin-top:30px;"><p style="color:#888;">TOTAL NET PROFIT</p><h1 style="color:{"#00ffcc" if net>=0 else "#ff4b4b"}; font-size:3.5rem; font-family:Rajdhani;">${net:,.2f}</h1></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center; margin-top:30px;"><h1 style="color:{"#00ffcc" if net>=0 else "#ff4b4b"}; font-size:3.5rem;">${net:,.2f}</h1><p>TOTAL NET PROFIT</p></div>', unsafe_allow_html=True)
 
-# --- 8. JOURNAL ---
+# --- 8. JOURNAL & OTHERS ---
 elif choice == "JOURNAL":
     if not df.empty:
         for _, row in df.sort_values('id', ascending=False).iterrows():
@@ -207,17 +171,7 @@ elif choice == "JOURNAL":
             st.markdown(f'<div class="{j_class}">', unsafe_allow_html=True)
             with st.expander(f"● {row['date']} | {row['pair']} | ${row['pnl']:,.2f}"):
                 tx, im = st.columns([1, 1.5])
-                with tx:
-                    st.write(f"**Setup:** {row['setup']}")
-                    st.info(f"Comment: {row['comment']}")
-                with im:
+                with tx: st.write(f"**Setup:** {row['setup']}"); st.info(f"Comment: {row['comment']}")
+                with im: 
                     if row['image']: st.image(base64.b64decode(row['image']), use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 9. ARCHIVE ---
-elif choice == "ARCHIVE":
-    if not df.empty:
-        df['m'] = df['date_dt'].dt.strftime('%B %Y')
-        for m in df['m'].unique():
-            with st.expander(f"📁 {m.upper()} | Net: ${df[df['m']==m]['pnl'].sum():,.2f}"):
-                st.dataframe(df[df['m']==m][['date', 'pair', 'outcome', 'pnl', 'setup', 'comment']], use_container_width=True)
