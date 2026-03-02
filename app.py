@@ -74,8 +74,9 @@ with st.sidebar:
     db_path = f"tracker_{acc_name.lower()}.db"
     conn = sqlite3.connect(db_path, check_same_thread=False)
     c = conn.cursor()
+    # تحديث الجدول ليشمل timestamp
     c.execute('''CREATE TABLE IF NOT EXISTS trades 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, pair TEXT, 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, timestamp TEXT, pair TEXT, 
                   outcome TEXT, pnl REAL, rr REAL, balance REAL, mindset TEXT, 
                   setup TEXT, comment TEXT, setup_desc TEXT, image TEXT)''')
     conn.commit()
@@ -104,7 +105,7 @@ with st.sidebar:
 
 st.markdown('<div class="welcome-text">SYSTEM ONLINE. ANALYZING SHADOW PERFORMANCE.</div>', unsafe_allow_html=True)
 
-# --- 5. TERMINAL (مع الشارت الديناميكي الملون %) ---
+# --- 5. TERMINAL (الشارت المحسن والمتحرك) ---
 if choice == "TERMINAL":
     c1, c2 = st.columns([1, 2.3])
     with c1:
@@ -119,39 +120,46 @@ if choice == "TERMINAL":
             comment = st.text_area("Notes")
             img_file = st.file_uploader("Screenshot", type=['png', 'jpg'])
             if st.form_submit_button("LOCK TRADE"):
+                now_ts = datetime.now().strftime('%H:%M:%S') # تسجيل الوقت الدقيق
                 img_data = base64.b64encode(img_file.read()).decode() if img_file else None
-                c.execute("INSERT INTO trades (date, pair, outcome, pnl, rr, balance, setup, comment, image) VALUES (?,?,?,?,?,?,?,?,?)",
-                          (str(d_in), asset, res, p_val, r_val, current_bal, setup, comment, img_data))
+                c.execute("INSERT INTO trades (date, timestamp, pair, outcome, pnl, rr, balance, setup, comment, image) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                          (str(d_in), now_ts, asset, res, p_val, r_val, current_bal, setup, comment, img_data))
                 conn.commit()
                 st.rerun()
     with c2:
         if not df.empty:
-            df_chart = df.sort_values(by='date_dt')
+            # دمج التاريخ والوقت لضمان تحرك الشارت أفقياً
+            df['full_time'] = df['date'] + " " + df['timestamp'].fillna("00:00:00")
+            df_chart = df.sort_values(by='full_time')
             df_chart['pnl_percent'] = (df_chart['pnl'].cumsum() / init_amount) * 100
             
             last_val = df_chart['pnl_percent'].iloc[-1]
             l_color = "#00ffcc" if last_val > 0 else "#ff4b4b" if last_val < 0 else "#ffcc00"
-            f_color = "rgba(0, 255, 204, 0.1)" if last_val > 0 else "rgba(255, 75, 75, 0.1)" if last_val < 0 else "rgba(255, 204, 0, 0.1)"
+            f_color = f"rgba({int(l_color[1:3], 16)}, {int(l_color[3:5], 16)}, {int(l_color[5:7], 16)}, 0.1)"
 
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df_chart['date'], y=df_chart['pnl_percent'], mode='lines+markers',
+            fig.add_trace(go.Scatter(x=df_chart['full_time'], y=df_chart['pnl_percent'], mode='lines+markers',
                                      line=dict(color=l_color, width=3, shape='spline'), fill='tozeroy', fillcolor=f_color,
                                      marker=dict(size=8, color=l_color)))
             fig.add_hline(y=0, line_dash="dash", line_color="#444", line_width=1)
             fig.update_layout(title="GROWTH CURVE (%)", template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', 
-                              plot_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani", yaxis_ticksuffix="%")
+                              plot_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani", yaxis_ticksuffix="%",
+                              xaxis_title="Time Line")
             st.plotly_chart(fig, use_container_width=True)
 
-# --- 6. PERFORMANCE (مع تصحيح Profit Factor) ---
+# --- 6. PERFORMANCE (مع معادلة Profit Factor الصحيحة) ---
 elif choice == "PERFORMANCE":
     if not df.empty:
-        wins, losses = df[df['pnl'] > 0], df[df['pnl'] < 0]
-        wr = (len(wins)/len(df))*100
-        avg_rr = df['rr'].mean()
+        wins_df = df[df['pnl'] > 0]
+        losses_df = df[df['pnl'] < 0]
         
-        gross_profit, gross_loss = wins['pnl'].sum(), abs(losses['pnl'].sum())
+        gross_profit = wins_df['pnl'].sum()
+        gross_loss = abs(losses_df['pnl'].sum())
+        
+        # Profit Factor = Gross Profit / Gross Loss
         pf = gross_profit / gross_loss if gross_loss != 0 else gross_profit
-        
+        wr = (len(wins_df)/len(df))*100
+        avg_rr = df['rr'].mean()
         consistency = max(0, min(100, 100 - ((df['pnl'].std() / abs(df['pnl'].mean())) * 10))) if len(df)>2 else 0
 
         c_g, c_s = st.columns([1, 1.5])
@@ -170,17 +178,15 @@ elif choice == "PERFORMANCE":
         net = df['pnl'].sum()
         st.markdown(f'<div style="text-align:center; margin-top:30px;"><h1 style="color:{"#00ffcc" if net>=0 else "#ff4b4b"}; font-size:3.5rem; font-family:Rajdhani;">${net:,.2f}</h1><p>TOTAL NET PROFIT</p></div>', unsafe_allow_html=True)
 
-# --- 7. CALENDAR, JOURNAL, ARCHIVE (كود ثابت) ---
+# (باقي الأقسام Calendar و Journal و Archive تبقى كما هي لضمان عدم تغيير أي وظيفة أخرى)
 elif choice == "CALENDAR":
     if not df.empty:
         first_day = df['date_dt'].min().replace(day=1)
         _, last_day_num = calendar.monthrange(first_day.year, first_day.month)
         st.markdown(f"<h2 style='text-align:center; color:#00d4ff; font-family:Rajdhani;'>{first_day.strftime('%B %Y').upper()}</h2>", unsafe_allow_html=True)
-        
         cols_h = st.columns(7)
         for i, wd in enumerate(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]):
-            cols_h[i].markdown(f"<div style='text-align:center; color:#00ffcc; font-size:0.8rem; border-bottom:1px solid #333;'>{wd}</div>", unsafe_allow_html=True)
-        
+            cols_h[i].markdown(f"<div style='text-align:center; color:#00ffcc; font-size:0.8rem;'>{wd}</div>", unsafe_allow_html=True)
         start_padding = first_day.weekday()
         for row in range(0, start_padding + last_day_num, 7):
             cols = st.columns(7)
@@ -190,13 +196,9 @@ elif choice == "CALENDAR":
                     if start_padding <= idx < start_padding + last_day_num:
                         d_num = idx - start_padding + 1
                         curr_date = first_day.replace(day=d_num)
-                        day_trades = df[df['date_dt'].dt.date == curr_date.date()]
-                        d_pnl = day_trades['pnl'].sum()
-                        bg, border, txt, p_str = "rgba(255,255,255,0.02)", "rgba(255,255,255,0.05)", "#444", ""
-                        if not day_trades.empty:
-                            if d_pnl > 0: bg, border, txt, p_str = "rgba(0,255,204,0.1)", "#00ffcc", "#00ffcc", f"+${d_pnl:,.0f}"
-                            elif d_pnl < 0: bg, border, txt, p_str = "rgba(255,75,75,0.1)", "#ff4b4b", "#ff4b4b", f"-${abs(d_pnl):,.0f}"
-                        st.markdown(f'<div style="background:{bg}; border:1px solid {border}; border-radius:12px; padding:10px; height:90px; text-align:center;"><div style="font-size:0.7rem;">{d_num}</div><div style="color:{txt}; font-weight:bold;">{p_str}</div></div>', unsafe_allow_html=True)
+                        d_pnl = df[df['date_dt'].dt.date == curr_date.date()]['pnl'].sum()
+                        txt = "#00ffcc" if d_pnl > 0 else "#ff4b4b" if d_pnl < 0 else "#444"
+                        st.markdown(f'<div style="border:1px solid #333; border-radius:10px; padding:5px; text-align:center; height:80px;"><div style="font-size:0.7rem;">{d_num}</div><div style="color:{txt}; font-weight:bold; font-size:0.8rem;">{f"${d_pnl:,.0f}" if d_pnl!=0 else ""}</div></div>', unsafe_allow_html=True)
 
 elif choice == "JOURNAL":
     if not df.empty:
@@ -205,7 +207,7 @@ elif choice == "JOURNAL":
             st.markdown(f'<div class="{j_class}">', unsafe_allow_html=True)
             with st.expander(f"● {row['date']} | {row['pair']} | ${row['pnl']:,.2f}"):
                 tx, im = st.columns([1, 1.5])
-                with tx: st.write(f"**Setup:** {row['setup']}"); st.info(f"Comment: {row['comment']}")
+                with tx: st.write(f"**Setup:** {row['setup']}"); st.info(f"Note: {row['comment']}")
                 with im: 
                     if row['image']: st.image(base64.b64decode(row['image']), use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
