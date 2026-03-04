@@ -1,6 +1,6 @@
 # =====================================
 # ELITE OPERATOR LAB – FULL STREAMLIT FILE
-# Neon UI + Right Slide Panel + Trade Journal Module
+# Neon UI + Right Slide Panel + Trade Journal + Dashboard Updated
 # =====================================
 
 import streamlit as st
@@ -132,26 +132,61 @@ def profit_factor(trades):
 def asset_breakdown(trades):
     return trades.groupby("asset")["pnl"].agg(["count","sum"])
 
-# -----------------------------
-# PAGES
-# -----------------------------
-# DASHBOARD
+# =====================================
+# DASHBOARD UPDATED – WITH EQUITY + ARROW + ICONS PANEL
+# =====================================
 if page=="Dashboard":
     st.title("CONTROL CENTER")
+
+    # --- Account Name + Equity + Arrow ---
     if not trades.empty:
         trades = equity_curve(trades)
+        last_equity = trades["cumulative"].iloc[-1]
+        prev_equity = trades["cumulative"].iloc[-2] if len(trades)>=2 else 0
+        change = last_equity - prev_equity
+        arrow = "▲" if change>0 else "▼" if change<0 else "→"
+        color = "green" if change>0 else "red" if change<0 else "gray"
+
+        st.markdown(f"""
+            <div style='text-align:center; font-size:28px; font-weight:bold;'>
+            {account['name']}
+            </div>
+            <div style='text-align:center; font-size:36px; font-weight:bold; margin-top:5px;'>
+            Equity: {last_equity} <span style='color:{color}; font-size:28px;'>{arrow} {abs(change)}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info("No trades yet.")
+
+    st.markdown("<hr style='border:1px solid #7B2FF7'>", unsafe_allow_html=True)
+
+    # --- Icons Panel under Equity ---
+    st.markdown("<div style='display:flex; justify-content:center; gap:15px; margin-top:15px;'>", unsafe_allow_html=True)
+    icons = ["Trades","Calendar","Analytics","Psychology","Breach Log","Terminal"]
+    for icon in icons:
+        st.markdown(f"""
+            <div style='background-color:#111217; padding:15px 25px; border-radius:20px; box-shadow: 0 0 15px #7B2FF7; cursor:pointer; text-align:center; font-weight:bold;'>
+            {icon}
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # --- Main Charts / Equity Curve ---
+    if not trades.empty:
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=trades["date"], y=trades["cumulative"], mode="lines", name="Equity"))
-        fig.add_trace(go.Scatter(x=trades["date"], y=trades["drawdown"], mode="lines", name="Drawdown"))
+        fig.add_trace(go.Scatter(x=trades["date"], y=trades["cumulative"], mode="lines+markers", name="Equity"))
+        fig.add_trace(go.Scatter(x=trades["date"], y=trades["drawdown"], mode="lines+markers", name="Drawdown"))
         st.plotly_chart(fig, use_container_width=True)
+
+        # --- Metrics below ---
         col1,col2,col3 = st.columns(3)
         col1.metric("Net P&L", round(trades["pnl"].sum(),2))
         col2.metric("Win Rate", win_rate(trades))
         col3.metric("Profit Factor", profit_factor(trades))
-    else:
-        st.info("No trades yet.")
 
-# TRADES PAGE
+# =====================================
+# TRADES PAGE (Journal Module)
+# =====================================
 elif page=="Trades":
     st.title("TRADE JOURNAL")
     with st.form("trade_form"):
@@ -190,7 +225,9 @@ elif page=="Trades":
             else: return 'background-color:yellow;color:black'
         st.dataframe(trades.style.applymap(color_row, subset=["pnl"]))
 
-# CALENDAR
+# =====================================
+# CALENDAR PAGE
+# =====================================
 elif page=="Calendar":
     st.title("Performance Calendar")
     if not trades.empty:
@@ -213,14 +250,18 @@ elif page=="Calendar":
     else:
         st.info("No data for calendar.")
 
-# ANALYTICS
+# =====================================
+# ANALYTICS PAGE
+# =====================================
 elif page=="Analytics":
     st.title("Scientific Breakdown")
     if not trades.empty:
         st.subheader("Asset Performance")
         st.dataframe(asset_breakdown(trades))
 
-# PSYCHOLOGY
+# =====================================
+# PSYCHOLOGY PAGE
+# =====================================
 elif page=="Psychology":
     st.title("Psychology Lab")
     if not trades.empty:
@@ -228,13 +269,17 @@ elif page=="Psychology":
         if "Revenge" in trades["emotion"].values:
             st.warning("Revenge trades detected!")
 
-# BREACH LOG
+# =====================================
+# BREACH LOG PAGE
+# =====================================
 elif page=="Breach Log":
     st.title("Protocol Breaches")
     breaches = pd.read_sql("SELECT * FROM breaches", conn)
     st.dataframe(breaches)
 
-# TERMINAL
+# =====================================
+# TERMINAL PAGE
+# =====================================
 elif page=="Terminal":
     st.title("Risk Control Panel")
     st.write("Max Daily Loss:", account["max_daily_loss"])
