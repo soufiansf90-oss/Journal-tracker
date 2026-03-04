@@ -1,177 +1,249 @@
+# =====================================
+# ELITE OPERATOR LAB – FULL STREAMLIT FILE
+# Neon UI + Right Slide Panel + Trade Journal Module
+# =====================================
+
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
+import numpy as np
 import sqlite3
+from datetime import datetime
 import calendar
-import base64
-import os
+import plotly.graph_objects as go
 
-# --- 1. SETTINGS & ADVANCED VIOLET NEON UI ---
-st.set_page_config(page_title="369 SHADOW PRO", layout="wide")
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
+st.set_page_config(page_title="ELITE OPERATOR LAB", layout="wide")
 
+# -----------------------------
+# DATABASE
+# -----------------------------
+conn = sqlite3.connect("elite_lab.db", check_same_thread=False)
+c = conn.cursor()
+
+# Tables
+c.execute("""CREATE TABLE IF NOT EXISTS accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT, starting_balance REAL, max_daily_loss REAL,
+    max_trades INTEGER, min_rr REAL)""")
+
+c.execute("""CREATE TABLE IF NOT EXISTS trades (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER,
+    date TEXT, asset TEXT, market_type TEXT, session TEXT, setup TEXT,
+    entry REAL, sl REAL, tp REAL, exit REAL, pnl REAL,
+    rr_planned REAL, rr_achieved REAL, emotion TEXT, rule_break INTEGER,
+    rating TEXT, comment TEXT, screenshot TEXT)""")
+
+c.execute("""CREATE TABLE IF NOT EXISTS breaches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER,
+    date TEXT, breach_type TEXT, description TEXT)""")
+
+conn.commit()
+
+# -----------------------------
+# CSS – Neon Style
+# -----------------------------
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Lexend:wght@300;500&display=swap');
-.stApp { background: #050508; color: #eef2f6; font-family: 'Lexend', sans-serif; }
-.welcome-text { font-family: 'Rajdhani'; color: #00d4ff; font-size: 1.6rem; text-align: center; font-weight: 700; margin-bottom: 25px; text-shadow: 0 0 10px rgba(0,212,255,0.4); }
-[data-testid="stSidebar"] { background-color: #080810; border-right: 2px solid #bc13fe33; }
-.equity-box { background: rgba(188, 19, 254, 0.05); border: 1px solid #bc13fe; border-radius: 20px; padding: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 0 10px rgba(188,19,254,0.2); }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label { background: rgba(188, 19, 254, 0.02) !important; border: 1px solid rgba(188, 19, 254, 0.3) !important; padding: 12px 20px !important; border-radius: 15px !important; color: #8b949e; font-family: 'Rajdhani'; font-size: 1rem; margin-bottom: 8px; transition: 0.3s; }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) { border: 1px solid #bc13fe !important; color: #bc13fe !important; box-shadow: 0 0 15px rgba(188,19,254,0.4); background: rgba(188, 19, 254, 0.1) !important; }
-.perf-card { background: rgba(20, 20, 30, 0.8); border: 1px solid #bc13fe33; padding: 20px; border-radius: 20px; text-align: center; }
-.perf-card h4 { font-family: 'Rajdhani'; color: #bc13fe; font-size: 1.8rem; margin:0; }
-.perf-card p { font-size: 0.8rem; color: #64748b; text-transform: uppercase; margin-top:5px; }
-.journal-win { border-left: 5px solid #00ffcc; background: rgba(0, 255, 204, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
-.journal-loss { border-left: 5px solid #ff4b4b; background: rgba(255, 75, 75, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
-.journal-be { border-left: 5px solid #ffcc00; background: rgba(255, 204, 0, 0.05); padding:15px; border-radius:15px; margin-bottom:15px; }
+body {background-color:#0B0C10; color:white;}
+div[data-testid="stMetric"] {background-color:#111217; padding:20px; border-radius:15px; border:1px solid #7B2FF7;}
+.stButton>button {background-color:#7B2FF7; color:white; border-radius:10px;}
+.stSidebar {background-color:#111217;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. MULTI-ACCOUNT SYSTEM (رجوع الـ Sidebar الأصلي) ---
-with st.sidebar:
-    st.markdown('<div style="font-family:Rajdhani; color:#bc13fe; font-size:1.5rem; font-weight:700; text-align:center; padding-bottom:15px;">SHADOW SYSTEM</div>', unsafe_allow_html=True)
-    
-    existing_accounts = [f.replace('tracker_', '').replace('.db', '') for f in os.listdir() if f.startswith('tracker_') and f.endswith('.db')]
-    selected_acc = st.selectbox("📂 ACCOUNT", options=list(set(existing_accounts + ["+ New Account"])))
-    
-    if selected_acc == "+ New Account":
-        acc_name = st.text_input("Account Name", "Main_Tracker").strip().replace(" ", "_")
+# -----------------------------
+# SIDEBAR – Right Slide Panel
+# -----------------------------
+st.sidebar.title("ELITE OPERATOR LAB")
+page = st.sidebar.radio("Navigation", ["Dashboard","Trades","Calendar","Analytics","Psychology","Breach Log","Terminal"])
+
+# -----------------------------
+# ACCOUNT SETUP (DYNAMIC)
+# -----------------------------
+accounts = pd.read_sql("SELECT * FROM accounts", conn)
+if accounts.empty:
+    st.sidebar.subheader("Create Account")
+    name = st.sidebar.text_input("Account Name")
+    balance = st.sidebar.number_input("Starting Balance", value=10000.0, step=100.0)
+    max_loss = st.sidebar.number_input("Max Daily Loss", value=50.0, step=1.0)
+    max_trades = st.sidebar.number_input("Max Trades Per Day", value=1, step=1)
+    min_rr = st.sidebar.number_input("Minimum RR", value=2.0, step=0.1)
+    if st.sidebar.button("Create Account"):
+        if name.strip()=="":
+            st.sidebar.error("Account Name cannot be empty!")
+        else:
+            c.execute("INSERT INTO accounts (name,starting_balance,max_daily_loss,max_trades,min_rr) VALUES (?,?,?,?,?)",
+                      (name,balance,max_loss,max_trades,min_rr))
+            conn.commit()
+            st.experimental_rerun()
+else:
+    account = accounts.iloc[0]
+
+# -----------------------------
+# LOAD TRADES
+# -----------------------------
+trades = pd.read_sql("SELECT * FROM trades", conn)
+if not trades.empty:
+    trades["date"] = pd.to_datetime(trades["date"])
+
+# -----------------------------
+# SCORING
+# -----------------------------
+def execution_score(trade, account):
+    score = 100
+    if trade["rr_achieved"] < account["min_rr"]:
+        score -= 20
+    if trade["rule_break"]==1:
+        score -= 25
+    if trade["emotion"] in ["Revenge","FOMO"]:
+        score -= 15
+    if score<0:
+        score=0
+    if score>=90:
+        verdict="ELITE"
+    elif score>=75:
+        verdict="PROFESSIONAL"
+    elif score>=60:
+        verdict="UNSTABLE"
     else:
-        acc_name = selected_acc
+        verdict="LIABILITY"
+    return score, verdict
 
-    init_amount = st.number_input("💰 INITIAL AMOUNT ($)", value=1000.0)
+# -----------------------------
+# ANALYTICS
+# -----------------------------
+def equity_curve(trades):
+    trades["cumulative"] = trades["pnl"].cumsum()
+    trades["drawdown"] = trades["cumulative"] - trades["cumulative"].cummax()
+    return trades
 
-    db_path = f"tracker_{acc_name.lower()}.db"
-    conn = sqlite3.connect(db_path, check_same_thread=False)
-    c = conn.cursor()
-    
-    # تأمين الأعمدة (timestamp)
-    try:
-        c.execute("SELECT timestamp FROM trades LIMIT 1")
-    except:
-        c.execute("ALTER TABLE trades ADD COLUMN timestamp TEXT")
-        conn.commit()
+def win_rate(trades):
+    if len(trades)==0: return 0
+    return round(len(trades[trades["pnl"]>0])/len(trades)*100,2)
 
-    c.execute('''CREATE TABLE IF NOT EXISTS trades 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, timestamp TEXT, pair TEXT, 
-                  outcome TEXT, pnl REAL, rr REAL, balance REAL, mindset TEXT, 
-                  setup TEXT, comment TEXT, setup_desc TEXT, image TEXT)''')
-    conn.commit()
+def profit_factor(trades):
+    wins = trades[trades["pnl"]>0]["pnl"].sum()
+    losses = trades[trades["pnl"]<0]["pnl"].sum()
+    if losses==0: return 0
+    return round(abs(wins/losses),2)
 
-# --- 3. DATA LOGIC ---
-df = pd.read_sql_query("SELECT * FROM trades", conn)
-current_bal = init_amount
-daily_pnl = 0.0
-if not df.empty:
-    df['date_dt'] = pd.to_datetime(df['date'])
-    current_bal = init_amount + df['pnl'].sum()
-    daily_pnl = df[df['date'] == datetime.now().strftime('%Y-%m-%d')]['pnl'].sum()
+def asset_breakdown(trades):
+    return trades.groupby("asset")["pnl"].agg(["count","sum"])
 
-# --- 4. SIDEBAR EQUITY & MENU ---
-with st.sidebar:
-    st.markdown(f'<div class="equity-box"><div style="font-family:Rajdhani; font-size:0.7rem; color:#bc13fe;">{acc_name.upper()} EQUITY</div><div style="font-size:1.8rem; font-weight:700;">${current_bal:,.2f}</div><div style="font-size:0.8rem; color:{"#00ffcc" if daily_pnl >= 0 else "#ff4b4b"};">{daily_pnl:+.2f} USD TODAY</div></div>', unsafe_allow_html=True)
-    choice = st.radio("MENU", ["TERMINAL", "CALENDAR", "WEEKLY ANALYSIS", "PERFORMANCE", "JOURNAL", "ARCHIVE"])
+# -----------------------------
+# PAGES
+# -----------------------------
+# DASHBOARD
+if page=="Dashboard":
+    st.title("CONTROL CENTER")
+    if not trades.empty:
+        trades = equity_curve(trades)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=trades["date"], y=trades["cumulative"], mode="lines", name="Equity"))
+        fig.add_trace(go.Scatter(x=trades["date"], y=trades["drawdown"], mode="lines", name="Drawdown"))
+        st.plotly_chart(fig, use_container_width=True)
+        col1,col2,col3 = st.columns(3)
+        col1.metric("Net P&L", round(trades["pnl"].sum(),2))
+        col2.metric("Win Rate", win_rate(trades))
+        col3.metric("Profit Factor", profit_factor(trades))
+    else:
+        st.info("No trades yet.")
 
-st.markdown('<div class="welcome-text">SYSTEM ONLINE. ANALYZING SHADOW PERFORMANCE.</div>', unsafe_allow_html=True)
+# TRADES PAGE
+elif page=="Trades":
+    st.title("TRADE JOURNAL")
+    with st.form("trade_form"):
+        date = st.date_input("Date")
+        asset = st.text_input("Asset")
+        market_type = st.selectbox("Market Type", ["Futures","Forex","Crypto"])
+        session = st.selectbox("Session", ["Asia","London","NY"])
+        setup = st.text_input("Setup")
+        entry = st.number_input("Entry Price")
+        sl = st.number_input("Stop Loss")
+        tp = st.number_input("Take Profit")
+        exit_price = st.number_input("Exit Price")
+        emotion = st.selectbox("Emotion", ["Calm","FOMO","Revenge","Hesitation"])
+        rule_break = st.checkbox("Rule Break")
+        rating = st.selectbox("Rating", ["A+","A","B","C"])
+        comment = st.text_area("Comment")
+        screenshot = st.text_input("Screenshot URL / Path")
+        submit = st.form_submit_button("Add Trade")
+        if submit:
+            rr_planned = abs((tp-entry)/(entry-sl)) if entry!=sl else 0
+            rr_achieved = abs((exit_price-entry)/(entry-sl)) if entry!=sl else 0
+            pnl = exit_price-entry
+            c.execute("""INSERT INTO trades
+            (account_id,date,asset,market_type,session,setup,entry,sl,tp,exit,pnl,rr_planned,rr_achieved,emotion,rule_break,rating,comment,screenshot)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                      (account["id"],str(date),asset,market_type,session,setup,
+                       entry,sl,tp,exit_price,pnl,rr_planned,rr_achieved,emotion,int(rule_break),
+                       rating,comment,screenshot))
+            conn.commit()
+            st.experimental_rerun()
+    if not trades.empty:
+        # Color-coded display
+        def color_row(row):
+            if row["pnl"]>0: return 'background-color:green;color:white'
+            elif row["pnl"]<0: return 'background-color:red;color:white'
+            else: return 'background-color:yellow;color:black'
+        st.dataframe(trades.style.applymap(color_row, subset=["pnl"]))
 
-# --- 5. TERMINAL (Fixed Time & %) ---
-if choice == "TERMINAL":
-    c1, c2 = st.columns([1, 2.3])
-    with c1:
-        with st.form("entry_form"):
-            st.markdown("### 📥 LOG ENTRY")
-            d_in = st.date_input("Date", datetime.now())
-            asset = st.text_input("Pair", "NAS100").upper()
-            res = st.selectbox("Outcome", ["WIN", "LOSS", "BE"])
-            p_val = st.number_input("P&L ($)", value=0.0)
-            r_val = st.number_input("RR Ratio", value=0.0)
-            setup = st.text_input("Setup Name").upper()
-            comment = st.text_area("Notes")
-            img_file = st.file_uploader("Screenshot", type=['png', 'jpg'])
-            if st.form_submit_button("LOCK TRADE"):
-                now_ts = datetime.now().strftime('%H:%M:%S')
-                img_data = base64.b64encode(img_file.read()).decode() if img_file else None
-                c.execute("INSERT INTO trades (date, timestamp, pair, outcome, pnl, rr, balance, setup, comment, image) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                          (str(d_in), now_ts, asset, res, p_val, r_val, current_bal, setup, comment, img_data))
-                conn.commit()
-                st.rerun()
-    with c2:
-        if not df.empty:
-            df['timestamp'] = df['timestamp'].fillna("00:00:00")
-            df['full_time'] = pd.to_datetime(df['date'] + " " + df['timestamp'])
-            df_chart = df.sort_values(by='full_time')
-            df_chart['pnl_percent'] = (df_chart['pnl'].cumsum() / init_amount) * 100
-            
-            last_val = df_chart['pnl_percent'].iloc[-1]
-            l_color = "#00ffcc" if last_val > 0 else "#ff4b4b" if last_val < 0 else "#ffcc00"
-            f_color = f"rgba({int(l_color[1:3], 16)}, {int(l_color[3:5], 16)}, {int(l_color[5:7], 16)}, 0.1)"
+# CALENDAR
+elif page=="Calendar":
+    st.title("Performance Calendar")
+    if not trades.empty:
+        grouped = trades.groupby(trades["date"].dt.date)["pnl"].sum()
+        month = datetime.now().month
+        year = datetime.now().year
+        cal = calendar.monthcalendar(year, month)
+        for week in cal:
+            cols = st.columns(7)
+            for i, day in enumerate(week):
+                if day==0: cols[i].write("")
+                else:
+                    date_obj = datetime(year, month, day).date()
+                    pnl = grouped.get(date_obj,0)
+                    color = "green" if pnl>0 else "red" if pnl<0 else "yellow"
+                    cols[i].markdown(f"""
+                        <div style='background-color:{color}; padding:20px; border-radius:10px'>
+                        <b>{day}</b><br>{round(pnl,2)}
+                        </div>""", unsafe_allow_html=True)
+    else:
+        st.info("No data for calendar.")
 
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df_chart['full_time'], y=df_chart['pnl_percent'], mode='lines+markers',
-                                     line=dict(color=l_color, width=3, shape='spline'), fill='tozeroy', fillcolor=f_color,
-                                     marker=dict(size=8, color=l_color)))
-            fig.add_hline(y=0, line_dash="dash", line_color="#444")
-            fig.update_layout(title="EQUITY CURVE (%)", template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_family="Rajdhani", yaxis_ticksuffix="%")
-            st.plotly_chart(fig, use_container_width=True)
+# ANALYTICS
+elif page=="Analytics":
+    st.title("Scientific Breakdown")
+    if not trades.empty:
+        st.subheader("Asset Performance")
+        st.dataframe(asset_breakdown(trades))
 
-# --- 6. WEEKLY ANALYSIS ---
-elif choice == "WEEKLY ANALYSIS":
-    if not df.empty:
-        df['date_dt'] = pd.to_datetime(df['date'])
-        df['week'] = df['date_dt'].dt.isocalendar().week
-        df['day_name'] = df['date_dt'].dt.day_name()
-        
-        st.subheader("📊 Daily Performance (%)")
-        daily_perf = df.groupby('day_name')['pnl'].sum().reset_index()
-        daily_perf['pnl_%'] = (daily_perf['pnl'] / init_amount) * 100
-        days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        daily_perf['day_name'] = pd.Categorical(daily_perf['day_name'], categories=days_order, ordered=True)
-        daily_perf = daily_perf.sort_values('day_name')
-        
-        fig_day = px.line(daily_perf, x='day_name', y='pnl_%', markers=True)
-        fig_day.update_traces(line_color='#00d4ff', fill='tozeroy')
-        fig_day.update_layout(template="plotly_dark", yaxis_ticksuffix="%")
-        st.plotly_chart(fig_day, use_container_width=True)
-        
-        st.subheader("📅 Weekly Return (%) - Last 4 Weeks")
-        weekly_perf = df.groupby('week')['pnl'].sum().reset_index()
-        weekly_perf['pnl_%'] = (weekly_perf['pnl'] / init_amount) * 100
-        fig_week = px.bar(weekly_perf.tail(4), x='week', y='pnl_%', color='pnl_%', color_continuous_scale='RdYlGn')
-        fig_week.update_layout(template="plotly_dark", yaxis_ticksuffix="%")
-        st.plotly_chart(fig_week, use_container_width=True)
+# PSYCHOLOGY
+elif page=="Psychology":
+    st.title("Psychology Lab")
+    if not trades.empty:
+        st.dataframe(trades.groupby("emotion")["pnl"].agg(["count","sum"]))
+        if "Revenge" in trades["emotion"].values:
+            st.warning("Revenge trades detected!")
 
-# --- 7. PERFORMANCE (Correct Profit Factor) ---
-elif choice == "PERFORMANCE":
-    if not df.empty:
-        gross_profit = df[df['pnl'] > 0]['pnl'].sum()
-        gross_loss = abs(df[df['pnl'] < 0]['pnl'].sum())
-        pf = gross_profit / gross_loss if gross_loss != 0 else gross_profit
-        wr = (len(df[df['pnl'] > 0])/len(df))*100
-        avg_rr = df['rr'].mean()
+# BREACH LOG
+elif page=="Breach Log":
+    st.title("Protocol Breaches")
+    breaches = pd.read_sql("SELECT * FROM breaches", conn)
+    st.dataframe(breaches)
 
-        c_g, c_s = st.columns([1, 1.5])
-        with c_g:
-            st.plotly_chart(go.Figure(go.Indicator(mode="gauge+number", value=wr, number={'suffix':"%"})).update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)'))
-        with c_s:
-            r1 = st.columns(3)
-            r1[0].markdown(f'<div class="perf-card"><h4>{avg_rr:.2f}</h4><p>Avg RR</p></div>', unsafe_allow_html=True)
-            r1[1].markdown(f'<div class="perf-card"><h4>{pf:.2f}</h4><p>Profit Factor</p></div>', unsafe_allow_html=True)
-            r1[2].markdown(f'<div class="perf-card"><h4>{wr:.0f}%</h4><p>Win Rate</p></div>', unsafe_allow_html=True)
-        
-        net = df['pnl'].sum()
-        st.markdown(f'<div style="text-align:center; margin-top:30px;"><h1 style="color:{"#00ffcc" if net>=0 else "#ff4b4b"}; font-size:3.5rem;">${net:,.2f}</h1><p>TOTAL NET PROFIT</p></div>', unsafe_allow_html=True)
-
-# --- 8. JOURNAL & OTHERS ---
-elif choice == "JOURNAL":
-    if not df.empty:
-        for _, row in df.sort_values('id', ascending=False).iterrows():
-            j_class = "journal-win" if row['outcome']=="WIN" else "journal-loss" if row['outcome']=="LOSS" else "journal-be"
-            st.markdown(f'<div class="{j_class}">', unsafe_allow_html=True)
-            with st.expander(f"● {row['date']} | {row['pair']} | ${row['pnl']:,.2f}"):
-                tx, im = st.columns([1, 1.5])
-                with tx: st.write(f"**Setup:** {row['setup']}"); st.info(f"Comment: {row['comment']}")
-                with im: 
-                    if row['image']: st.image(base64.b64decode(row['image']), use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+# TERMINAL
+elif page=="Terminal":
+    st.title("Risk Control Panel")
+    st.write("Max Daily Loss:", account["max_daily_loss"])
+    st.write("Max Trades Per Day:", account["max_trades"])
+    st.write("Minimum RR:", account["min_rr"])
+    if not trades.empty:
+        today = datetime.now().date()
+        today_trades = trades[pd.to_datetime(trades["date"]).dt.date==today]
+        if today_trades["pnl"].sum() < -account["max_daily_loss"]:
+            st.error("Daily Risk Cap Violated.")
+        if len(today_trades) > account["max_trades"]:
+            st.error("Max Trades Exceeded.")
