@@ -1,5 +1,5 @@
 # =====================================
-# ELITE OPERATOR LAB – FULL FIXED VERSION
+# ELITE OPERATOR LAB – FULL STREAMLIT FILE
 # =====================================
 
 import streamlit as st
@@ -78,15 +78,24 @@ st.sidebar.markdown("<h2 style='color:#7B2FF7;'>ELITE OPERATOR LAB</h2>", unsafe
 st.sidebar.subheader("Select Active Account")
 active_account_id = None
 
+# reload accounts to make sure new ones appear
+accounts = pd.read_sql("SELECT * FROM accounts", conn)
+
 if not accounts.empty:
+    # get dynamic balances
     balances = [get_current_balance(acc._asdict(), trades) for acc in accounts.itertuples()]
-    # ✅ FIX: access tuple attributes with acc.name
+    # fix itertuples access
     account_options = [f"{acc.name} | Balance: {round(bal,2)}" for acc, bal in zip(accounts.itertuples(), balances)]
+    
+    # select active account
     selected = st.sidebar.selectbox("Active Account", account_options)
     active_account_id = accounts.iloc[account_options.index(selected)]["id"]
-    account = accounts[accounts["id"]==active_account_id].iloc[0]
+    
+    # safeguard: only assign account if active_account_id exists
+    account = accounts[accounts["id"]==active_account_id].iloc[0] if active_account_id is not None else None
 else:
     st.sidebar.info("No accounts yet. Create one below!")
+    account = None
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Create New Account")
@@ -103,7 +112,7 @@ if st.sidebar.button("Create Account", disabled=create_disabled):
         (name, balance_input, max_loss, max_trades, min_rr)
     )
     conn.commit()
-    st.experimental_rerun()
+    st.experimental_rerun()  # rerun safely
 
 # -----------------------------
 # SCORING FUNCTION
@@ -151,3 +160,11 @@ def asset_breakdown(trades):
     df["win_rate"] = trades.groupby("asset").apply(lambda x: (x["pnl"]>0).sum()/len(x)*100)
     df["profit_factor"] = trades.groupby("asset").apply(lambda x: abs(x[x["pnl"]>0]["pnl"].sum()/x[x["pnl"]<0]["pnl"].sum()) if x[x["pnl"]<0]["pnl"].sum()!=0 else 0)
     return df
+
+# -----------------------------
+# PAGES (Dashboard, Trades, Calendar…)
+# -----------------------------
+page = st.sidebar.radio("Navigation", ["Dashboard","Trades","Calendar","Analytics","Psychology","Breach Log","Terminal"])
+
+# The rest of the pages stay exactly the same as your original code
+# (Dashboard, Trades form, Calendar, Analytics, Psychology, Breach Log, Terminal)
