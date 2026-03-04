@@ -1,27 +1,26 @@
-# =====================================
-# ELITE OPERATOR LAB – ULTIMATE VERSION
-# Full Streamlit + Trade Journal + Dashboard + Neon UX + Dynamic Updates
-# =====================================
-
 import streamlit as st
 import pandas as pd
+import numpy as np
 import sqlite3
 from datetime import datetime
-import plotly.graph_objects as go
 import calendar
+import plotly.graph_objects as go
 
 # -----------------------------
 # PAGE CONFIG
 # -----------------------------
-st.set_page_config(page_title="ELITE OPERATOR LAB", layout="wide")
+st.set_page_config(page_title="ELITE OPERATOR LAB", layout="wide", initial_sidebar_state="expanded")
 
 # -----------------------------
-# DATABASE
+# DATABASE & DATA LOADING
 # -----------------------------
-conn = sqlite3.connect("elite_lab.db", check_same_thread=False)
+def get_connection():
+    return sqlite3.connect("elite_lab.db", check_same_thread=False)
+
+conn = get_connection()
 c = conn.cursor()
 
-# Tables
+# Initialize Tables
 c.execute("""CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT, starting_balance REAL, max_daily_loss REAL,
@@ -34,248 +33,166 @@ c.execute("""CREATE TABLE IF NOT EXISTS trades (
     rr_planned REAL, rr_achieved REAL, emotion TEXT, rule_break INTEGER,
     rating TEXT, comment TEXT, screenshot TEXT)""")
 
-c.execute("""CREATE TABLE IF NOT EXISTS breaches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER,
-    date TEXT, breach_type TEXT, description TEXT)""")
 conn.commit()
 
 # -----------------------------
-# CSS – Neon Style
+# CSS – Neon Cyberpunk Style
 # -----------------------------
 st.markdown("""
 <style>
-body {background-color:#0B0C10; color:white;}
-div[data-testid="stMetric"] {background-color:#111217; padding:20px; border-radius:15px; border:1px solid #7B2FF7;}
-.stButton>button {background-color:#7B2FF7; color:white; border-radius:10px;}
-.stSidebar {background-color:#111217;}
+    [data-testid="stAppViewContainer"] {background-color: #0B0C10;}
+    [data-testid="stHeader"] {background: rgba(0,0,0,0);}
+    .stMetric {
+        background-color: #111217; 
+        padding: 20px; 
+        border-radius: 15px; 
+        border: 1px solid #7B2FF7;
+        box-shadow: 0 0 10px #7B2FF7;
+    }
+    h1, h2, h3 {color: #66FCF1 !important; font-family: 'Courier New', monospace;}
+    .stButton>button {
+        width: 100%;
+        background-color: #7B2FF7; 
+        color: white; 
+        border: none;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background-color: #66FCF1;
+        color: #0B0C10;
+        box-shadow: 0 0 20px #66FCF1;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Sidebar Navigation
-# -----------------------------
-st.sidebar.title("ELITE OPERATOR LAB")
-page = st.sidebar.radio("Navigation", ["Dashboard","Trades","Calendar","Analytics","Psychology","Breach Log","Terminal"])
-
-# -----------------------------
-# Load / Create Account
+# DATA REFRESH
 # -----------------------------
 accounts = pd.read_sql("SELECT * FROM accounts", conn)
+trades = pd.read_sql("SELECT * FROM trades", conn)
+if not trades.empty:
+    trades["date"] = pd.to_datetime(trades["date"])
+
+# -----------------------------
+# SIDEBAR & ACCOUNT LOGIC
+# -----------------------------
+st.sidebar.title("⚡ OPERATOR TERMINAL")
+
 if accounts.empty:
-    st.sidebar.subheader("Create Account")
-    name = st.sidebar.text_input("Account Name")
-    balance = st.sidebar.number_input("Starting Balance", value=10000.0, step=100.0)
-    max_loss = st.sidebar.number_input("Max Daily Loss", value=50.0, step=1.0)
-    max_trades = st.sidebar.number_input("Max Trades Per Day", value=1, step=1)
-    min_rr = st.sidebar.number_input("Minimum RR", value=2.0, step=0.1)
-    if st.sidebar.button("Create Account"):
-        if name.strip()=="":
-            st.sidebar.error("Account Name cannot be empty!")
-        else:
+    with st.sidebar.expander("INITIALIZE ACCOUNT", expanded=True):
+        name = st.text_input("Account Name")
+        balance = st.number_input("Starting Balance", value=10000.0)
+        max_loss = st.number_input("Max Daily Loss ($)", value=500.0)
+        max_trades = st.number_input("Max Daily Trades", value=3)
+        min_rr = st.number_input("Min Target RR", value=2.0)
+        if st.button("DEPLOY ACCOUNT"):
             c.execute("INSERT INTO accounts (name,starting_balance,max_daily_loss,max_trades,min_rr) VALUES (?,?,?,?,?)",
-                      (name,balance,max_loss,max_trades,min_rr))
+                      (name, balance, max_loss, max_trades, min_rr))
             conn.commit()
-            st.experimental_rerun()
+            st.rerun()
+    st.stop()
 else:
-    account = accounts.iloc[0]
+    account = accounts.iloc[-1] # Use the latest account created
+    st.sidebar.success(f"ACTIVE: {account['name']}")
+    
+    # Quick Risk Check
+    if not trades.empty:
+        today_pnl = trades[trades['date'].dt.date == datetime.now().date()]['pnl'].sum()
+        risk_color = "red" if today_pnl <= -account['max_daily_loss'] else "#66FCF1"
+        st.sidebar.markdown(f"**Daily P&L:** <span style='color:{risk_color}'>${today_pnl:.2f}</span>", unsafe_allow_html=True)
 
-# -----------------------------
-# Load Trades dynamically
-# -----------------------------
-def load_trades():
-    df = pd.read_sql("SELECT * FROM trades", conn)
-    if not df.empty:
-        df["date"] = pd.to_datetime(df["date"])
-    return df
-
-trades = load_trades()
-
-# -----------------------------
-# Functions
-# -----------------------------
-def equity_curve(df):
-    if df.empty: return df
-    df["cumulative"] = df["pnl"].cumsum()
-    df["drawdown"] = df["cumulative"] - df["cumulative"].cummax()
-    return df
-
-def win_rate(df):
-    if len(df)==0: return 0
-    return round(len(df[df["pnl"]>0])/len(df)*100,2)
-
-def profit_factor(df):
-    wins = df[df["pnl"]>0]["pnl"].sum()
-    losses = df[df["pnl"]<0]["pnl"].sum()
-    if losses==0: return 0
-    return round(abs(wins/losses),2)
-
-def asset_breakdown(df):
-    return df.groupby("asset")["pnl"].agg(["count","sum"])
+page = st.sidebar.radio("GO TO", ["Dashboard", "Trade Journal", "Analytics", "Psychology", "Terminal"])
 
 # -----------------------------
 # DASHBOARD
 # -----------------------------
-if page=="Dashboard":
-    st.title("CONTROL CENTER")
-
-    trades = equity_curve(trades)
-
-    # --- Top Section: Account Name + Equity + Arrow ---
+if page == "Dashboard":
+    st.title("OPERATOR DASHBOARD")
+    
     if not trades.empty:
-        last_equity = trades["cumulative"].iloc[-1]
-        prev_equity = trades["cumulative"].iloc[-2] if len(trades)>=2 else 0
-        change = last_equity - prev_equity
-        arrow = "▲" if change>0 else "▼" if change<0 else "→"
-        color = "green" if change>0 else "red" if change<0 else "yellow"
+        # Equity Calculation
+        trades = trades.sort_values("date")
+        trades["cumulative"] = account['starting_balance'] + trades["pnl"].cumsum()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Current Balance", f"${trades['cumulative'].iloc[-1]:,.2f}")
+        col2.metric("Total Trades", len(trades))
+        
+        win_rate = len(trades[trades['pnl'] > 0]) / len(trades) * 100
+        col3.metric("Win Rate", f"{win_rate:.1f}%")
+        
+        pf = abs(trades[trades['pnl'] > 0]['pnl'].sum() / trades[trades['pnl'] < 0]['pnl'].sum()) if len(trades[trades['pnl']<0]) > 0 else 0
+        col4.metric("Profit Factor", f"{pf:.2f}")
 
-        st.markdown(f"""
-            <div style='text-align:center; font-size:28px; font-weight:bold;'>
-            {account['name']}
-            </div>
-            <div style='text-align:center; font-size:36px; font-weight:bold; margin-top:5px;'>
-            Equity: {last_equity} <span style='color:{color}; font-size:28px;'>{arrow} {abs(change)}</span>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("No trades yet.")
-
-    st.markdown("<hr style='border:1px solid #7B2FF7'>", unsafe_allow_html=True)
-
-    # --- Icons Panel under Equity ---
-    st.markdown("<div style='display:flex; justify-content:center; gap:15px; margin-top:15px;'>", unsafe_allow_html=True)
-    icons = ["Trades","Calendar","Analytics","Psychology","Breach Log","Terminal"]
-    for icon in icons:
-        st.markdown(f"""
-            <div style='background-color:#111217; padding:15px 25px; border-radius:20px; box-shadow: 0 0 15px #7B2FF7; cursor:pointer; text-align:center; font-weight:bold;'>
-            {icon}
-            </div>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # --- Equity Curve Chart ---
-    if not trades.empty:
+        # Plotly Chart
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=trades["date"], y=trades["cumulative"], mode="lines+markers", name="Equity"))
-        fig.add_trace(go.Scatter(x=trades["date"], y=trades["drawdown"], mode="lines+markers", name="Drawdown"))
+        fig.add_trace(go.Scatter(x=trades["date"], y=trades["cumulative"], 
+                                 line=dict(color='#66FCF1', width=3),
+                                 fill='tozeroy', name="Equity"))
+        fig.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig, use_container_width=True)
-
-        # --- Metrics ---
-        col1,col2,col3 = st.columns(3)
-        col1.metric("Net P&L", round(trades["pnl"].sum(),2))
-        col2.metric("Win Rate", win_rate(trades))
-        col3.metric("Profit Factor", profit_factor(trades))
-
-# -----------------------------
-# TRADES PAGE
-# -----------------------------
-elif page=="Trades":
-    st.title("TRADE JOURNAL")
-    with st.form("trade_form"):
-        date = st.date_input("Date")
-        asset = st.text_input("Asset")
-        market_type = st.selectbox("Market Type", ["Futures","Forex","Crypto"])
-        session = st.selectbox("Session", ["Asia","London","NY"])
-        setup = st.text_input("Setup")
-        entry = st.number_input("Entry Price")
-        sl = st.number_input("Stop Loss")
-        tp = st.number_input("Take Profit")
-        exit_price = st.number_input("Exit Price")
-        emotion = st.selectbox("Emotion", ["Calm","FOMO","Revenge","Hesitation"])
-        rule_break = st.checkbox("Rule Break")
-        rating = st.selectbox("Rating", ["A+","A","B","C"])
-        comment = st.text_area("Comment")
-        screenshot = st.text_input("Screenshot URL / Path")
-        submit = st.form_submit_button("Add Trade")
-        if submit:
-            rr_planned = abs((tp-entry)/(entry-sl)) if entry!=sl else 0
-            rr_achieved = abs((exit_price-entry)/(entry-sl)) if entry!=sl else 0
-            pnl = exit_price-entry
-            c.execute("""INSERT INTO trades
-            (account_id,date,asset,market_type,session,setup,entry,sl,tp,exit,pnl,rr_planned,rr_achieved,emotion,rule_break,rating,comment,screenshot)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                      (account["id"],str(date),asset,market_type,session,setup,
-                       entry,sl,tp,exit_price,pnl,rr_planned,rr_achieved,emotion,int(rule_break),
-                       rating,comment,screenshot))
-            conn.commit()
-            st.experimental_rerun()  # reload trades immediately
-
-    trades = load_trades()  # reload after insert
-
-    if not trades.empty:
-        def color_row(row):
-            if row["pnl"]>0: return 'background-color:green;color:white'
-            elif row["pnl"]<0: return 'background-color:red;color:white'
-            else: return 'background-color:yellow;color:black'
-        st.dataframe(trades.style.applymap(color_row, subset=["pnl"]))
-
-# -----------------------------
-# CALENDAR PAGE
-# -----------------------------
-elif page=="Calendar":
-    st.title("Performance Calendar")
-    trades = load_trades()
-    if not trades.empty:
-        grouped = trades.groupby(trades["date"].dt.date)["pnl"].sum()
-        month = datetime.now().month
-        year = datetime.now().year
-        cal = calendar.monthcalendar(year, month)
-        for week in cal:
-            cols = st.columns(7)
-            for i, day in enumerate(week):
-                if day==0: cols[i].write("")
-                else:
-                    date_obj = datetime(year, month, day).date()
-                    pnl = grouped.get(date_obj,0)
-                    color = "green" if pnl>0 else "red" if pnl<0 else "yellow"
-                    cols[i].markdown(f"""
-                        <div style='background-color:{color}; padding:20px; border-radius:10px'>
-                        <b>{day}</b><br>{round(pnl,2)}
-                        </div>""", unsafe_allow_html=True)
     else:
-        st.info("No data for calendar.")
+        st.info("Awaiting execution data. Log your first trade in the Journal.")
 
 # -----------------------------
-# ANALYTICS PAGE
+# TRADE JOURNAL
 # -----------------------------
-elif page=="Analytics":
-    st.title("Scientific Breakdown")
-    trades = load_trades()
+elif page == "Trade Journal":
+    st.title("LOG MISSION")
+    
+    with st.expander("NEW TRADE ENTRY", expanded=False):
+        with st.form("trade_form", clear_on_submit=True):
+            c1, c2, c3 = st.columns(3)
+            date = c1.date_input("Date")
+            asset = c2.text_input("Asset (e.g., NQ, BTC)")
+            m_type = c3.selectbox("Market", ["Futures", "Forex", "Crypto"])
+            
+            c4, c5, c6 = st.columns(3)
+            entry = c4.number_input("Entry Price", format="%.5f")
+            sl = c5.number_input("Stop Loss", format="%.5f")
+            exit_p = c6.number_input("Exit Price", format="%.5f")
+            
+            emo = st.select_slider("Predominant Emotion", ["Revenge", "FOMO", "Anxious", "Calm", "Focused"])
+            comment = st.text_area("Trade Notes / Post-Mortem")
+            
+            submit = st.form_submit_button("LOCK IN TRADE")
+            
+            if submit:
+                # Basic Math
+                risk = abs(entry - sl)
+                pnl = exit_p - entry # Simple P&L; adjust if using lot sizes/contracts
+                rr_achieved = abs(pnl / risk) if risk != 0 else 0
+                
+                c.execute("""INSERT INTO trades 
+                    (account_id, date, asset, market_type, entry, sl, exit, pnl, rr_achieved, emotion, comment) 
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    (int(account['id']), str(date), asset, m_type, entry, sl, exit_p, pnl, rr_achieved, emo, comment))
+                conn.commit()
+                st.success("Trade Recorded.")
+                st.rerun()
+
     if not trades.empty:
-        st.subheader("Asset Performance")
-        st.dataframe(asset_breakdown(trades))
+        st.subheader("Recent Missions")
+        # Reverse chronological
+        st.dataframe(trades.sort_values("date", ascending=False), use_container_width=True)
 
 # -----------------------------
-# PSYCHOLOGY PAGE
+# TERMINAL (RISK SETTINGS)
 # -----------------------------
-elif page=="Psychology":
-    st.title("Psychology Lab")
-    trades = load_trades()
-    if not trades.empty:
-        st.dataframe(trades.groupby("emotion")["pnl"].agg(["count","sum"]))
-        if "Revenge" in trades["emotion"].values:
-            st.warning("Revenge trades detected!")
+elif page == "Terminal":
+    st.title("SYSTEM PARAMETERS")
+    st.write(f"**Operator:** {account['name']}")
+    st.divider()
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Risk Ceiling (Daily)", f"${account['max_daily_loss']}")
+    with col2:
+        st.metric("Minimum RR Threshold", f"{account['min_rr']}R")
+    
+    if st.button("PURGE DATA (Reset All Trades)"):
+        c.execute("DELETE FROM trades")
+        conn.commit()
+        st.warning("Data wiped.")
+        st.rerun()
 
-# -----------------------------
-# BREACH LOG PAGE
-# -----------------------------
-elif page=="Breach Log":
-    st.title("Protocol Breaches")
-    breaches = pd.read_sql("SELECT * FROM breaches", conn)
-    st.dataframe(breaches)
-
-# -----------------------------
-# TERMINAL PAGE
-# -----------------------------
-elif page=="Terminal":
-    st.title("Risk Control Panel")
-    st.write("Max Daily Loss:", account["max_daily_loss"])
-    st.write("Max Trades Per Day:", account["max_trades"])
-    st.write("Minimum RR:", account["min_rr"])
-    trades = load_trades()
-    if not trades.empty:
-        today = datetime.now().date()
-        today_trades = trades[trades["date"].dt.date==today]
-        if today_trades["pnl"].sum() < -account["max_daily_loss"]:
-            st.error("Daily Risk Cap Violated.")
-        if len(today_trades) > account["max_trades"]:
-            st.error("Max Trades Exceeded.")
