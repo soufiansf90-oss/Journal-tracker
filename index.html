@@ -4,36 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEXUS Trading Journal</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg-void: #020408;
-  --bg-deep: #060d14;
-  --bg-panel: #0a1520;
-  --bg-card: #0d1e2e;
-  --bg-elevated: #112433;
-  --neon-primary: #00d4ff;
-  --neon-bright: #00f0ff;
-  --neon-dim: #0099bb;
-  --neon-glow: rgba(0,212,255,0.15);
-  --neon-glow-strong: rgba(0,212,255,0.4);
-  --green: #00ff88;
-  --green-dim: #00cc66;
-  --red: #ff3366;
-  --red-dim: #cc2244;
-  --yellow: #ffcc00;
-  --yellow-dim: #cc9900;
-  --purple: #9b59b6;
-  --orange: #ff6600;
-  --text-primary: #e0f4ff;
-  --text-secondary: #7ab8d4;
-  --text-dim: #3a6680;
-  --border: rgba(0,212,255,0.12);
-  --border-bright: rgba(0,212,255,0.35);
-  --font-display: 'Orbitron', monospace;
-  --font-mono: 'Share Tech Mono', monospace;
-  --font-body: 'Rajdhani', sans-serif;
+  --bg-void: #0c0e13;
+  --bg-deep: #11141b;
+  --bg-panel: #161922;
+  --bg-card: #1a1e28;
+  --bg-elevated: #1f2433;
+  --neon-primary: #7ec8c8;
+  --neon-bright: #a8dcdc;
+  --neon-dim: #4a9a9a;
+  --neon-glow: rgba(126,200,200,0.10);
+  --neon-glow-strong: rgba(126,200,200,0.25);
+  --green: #5ebd8a;
+  --green-dim: #3d9e6a;
+  --red: #d95f6e;
+  --red-dim: #b04455;
+  --yellow: #d4a843;
+  --yellow-dim: #a87f28;
+  --purple: #8b79c8;
+  --orange: #c8845a;
+  --text-primary: #dde3ee;
+  --text-secondary: #8a95aa;
+  --text-dim: #454e62;
+  --border: rgba(126,200,200,0.09);
+  --border-bright: rgba(126,200,200,0.22);
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Outfit', sans-serif;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -47,12 +47,12 @@ body {
   min-height: 100vh;
 }
 
-/* Scanline effect */
+/* Subtle grid texture */
 body::before {
   content: '';
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 6px);
   pointer-events: none;
   z-index: 9999;
 }
@@ -85,11 +85,11 @@ body::before {
 }
 .logo-text {
   font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 900;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--neon-primary);
-  text-shadow: 0 0 20px var(--neon-primary), 0 0 40px rgba(0,212,255,0.3);
-  letter-spacing: 3px;
+  text-shadow: 0 0 24px rgba(126,200,200,0.45);
+  letter-spacing: 4px;
 }
 .logo-sub {
   font-family: var(--font-mono);
@@ -248,7 +248,7 @@ body::before {
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 8px var(--green);
+  box-shadow: 0 0 6px var(--green);
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
@@ -333,7 +333,7 @@ body::before {
   font-size: 26px;
   font-weight: 700;
   color: var(--accent, var(--neon-primary));
-  text-shadow: 0 0 20px var(--accent, var(--neon-primary));
+  text-shadow: 0 0 12px rgba(126,200,200,0.3);
   line-height: 1;
 }
 .metric-sub {
@@ -392,9 +392,9 @@ body::before {
 .btn-primary {
   background: var(--neon-primary);
   color: var(--bg-void);
-  box-shadow: 0 0 20px rgba(0,212,255,0.4);
+  box-shadow: 0 0 16px rgba(126,200,200,0.3);
 }
-.btn-primary:hover { background: var(--neon-bright); box-shadow: 0 0 30px rgba(0,212,255,0.6); transform: translateY(-1px); }
+.btn-primary:hover { background: var(--neon-bright); box-shadow: 0 0 24px rgba(126,200,200,0.45); transform: translateY(-1px); }
 .btn-outline {
   background: transparent;
   border: 1px solid var(--neon-dim);
@@ -426,7 +426,7 @@ body::before {
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 0 60px rgba(0,212,255,0.15);
+  box-shadow: 0 0 50px rgba(126,200,200,0.10);
   animation: slideUp .3s ease;
 }
 .modal.sm { width: 420px; }
@@ -622,7 +622,7 @@ body::before {
   content: '';
   width: 3px; height: 20px;
   background: var(--neon-primary);
-  box-shadow: 0 0 10px var(--neon-primary);
+  box-shadow: 0 0 8px rgba(126,200,200,0.5);
   border-radius: 2px;
 }
 
@@ -639,7 +639,7 @@ body::before {
   content: 'AI';
   position: absolute;
   top: -10px; left: 16px;
-  background: var(--neon-primary);
+  background: var(--neon-dim);
   color: var(--bg-void);
   font-family: var(--font-display);
   font-size: 9px;
@@ -675,7 +675,7 @@ body::before {
   color: var(--neon-primary);
   text-align: center;
   padding: 20px;
-  text-shadow: 0 0 20px var(--neon-primary);
+  text-shadow: 0 0 14px rgba(126,200,200,0.4);
 }
 
 /* ── TRADE DETAIL ── */
@@ -689,9 +689,9 @@ body::before {
 .trade-detail-symbol {
   font-family: var(--font-display);
   font-size: 32px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--neon-bright);
-  text-shadow: 0 0 30px var(--neon-primary);
+  text-shadow: 0 0 18px rgba(126,200,200,0.35);
 }
 .detail-levels {
   display: flex;
@@ -759,7 +759,7 @@ body::before {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--neon-primary);
-  box-shadow: 0 0 20px var(--neon-glow);
+  box-shadow: 0 0 16px rgba(126,200,200,0.15);
   z-index: 9000;
   animation: slideInRight .3s ease;
   display: flex;
