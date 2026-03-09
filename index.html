@@ -956,6 +956,14 @@ body::before {
 .rules-score-fill { height: 100%; border-radius: 3px; transition: width .4s ease, background .3s; }
 .rules-score-pct { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--neon-primary); min-width: 44px; text-align: right; }
 
+
+/* P&L sign toggle */
+#pnlSignBtn.negative {
+  background: rgba(240,79,106,0.15);
+  border-color: rgba(240,79,106,0.4);
+  color: var(--red);
+}
+
 </style>
 </head>
 <body>
@@ -1682,7 +1690,14 @@ body::before {
         </div>
         <div class="form-group">
           <label class="form-label">P&L ($)</label>
-          <input class="form-input" type="number" id="t_pnl" placeholder="0.00" step="any">
+          <div style="display:flex;gap:0">
+            <button type="button" id="pnlSignBtn" onclick="togglePnlSign()"
+              style="background:rgba(57,224,122,0.15);border:1px solid rgba(57,224,122,0.4);border-right:none;color:var(--green);font-family:var(--font-display);font-size:16px;font-weight:700;padding:0 14px;border-radius:4px 0 0 4px;cursor:pointer;transition:all .18s;min-width:44px;text-align:center">
+              +
+            </button>
+            <input class="form-input" type="number" id="t_pnl" placeholder="0.00" step="any"
+              style="border-radius:0 4px 4px 0;border-left:none">
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Session</label>
@@ -2034,6 +2049,7 @@ function openTradeModal(tradeId = null) {
   selectedEmotions = [];
   selectedSetup = null;
   currentRuleStates = {};
+  pnlSign = 1; resetPnlSign(1);
   document.getElementById('tradeModalTitle').textContent = tradeId ? 'EDIT TRADE' : 'LOG NEW TRADE';
   populateStrategySelect();
   setTimeout(() => renderTradeRulesChecklist(), 20);
@@ -2075,7 +2091,8 @@ function fillTradeForm(t) {
   document.getElementById('t_sl').value = t.sl || '';
   document.getElementById('t_tp').value = t.tp || '';
   document.getElementById('t_risk').value = t.risk || '';
-  document.getElementById('t_pnl').value = t.pnl || '';
+  document.getElementById('t_pnl').value = t.pnl !== undefined ? Math.abs(t.pnl) : '';
+  resetPnlSign(t.pnl || 0);
   document.getElementById('t_session').value = t.session || '';
   populateStrategySelect();
   setTimeout(() => { document.getElementById('t_strategy').value = t.strategy || ''; }, 10);
@@ -2102,7 +2119,7 @@ function saveTrade() {
   const sl = parseFloat(document.getElementById('t_sl').value) || null;
   const tp = parseFloat(document.getElementById('t_tp').value) || null;
   const risk = parseFloat(document.getElementById('t_risk').value) || null;
-  const pnl = parseFloat(document.getElementById('t_pnl').value) || 0;
+  const pnl = (parseFloat(document.getElementById('t_pnl').value) || 0) * pnlSign;
   const rr = (entry && sl && tp) ? calcRRValue(entry, sl, tp) : null;
   const trade = {
     id: editingTradeId || 'trade_' + Date.now(),
@@ -3243,6 +3260,29 @@ function updateRulesScore() {
   }
 }
 
+
+// P&L sign toggle
+let pnlSign = 1;
+function togglePnlSign() {
+  pnlSign = pnlSign === 1 ? -1 : 1;
+  const btn = document.getElementById('pnlSignBtn');
+  if (pnlSign === 1) {
+    btn.textContent = '+';
+    btn.classList.remove('negative');
+  } else {
+    btn.textContent = '−';
+    btn.classList.add('negative');
+  }
+}
+function resetPnlSign(val) {
+  // Set sign based on value (when editing)
+  pnlSign = (val < 0) ? -1 : 1;
+  const btn = document.getElementById('pnlSignBtn');
+  if (btn) {
+    btn.textContent = pnlSign === 1 ? '+' : '−';
+    btn.classList.toggle('negative', pnlSign === -1);
+  }
+}
 // ══════════════════════════════════════════
 // LOT SIZE CALCULATOR
 // ══════════════════════════════════════════
