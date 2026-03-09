@@ -886,6 +886,76 @@ body::before {
 .badge-c     { background:rgba(240,79,106,0.15); color:#f04f6a; border:1px solid rgba(240,79,106,0.35); }
 .badge-emotion { background:rgba(56,217,217,0.10); color:#38d9d9; border:1px solid rgba(56,217,217,0.25); }
 
+
+/* ── TRADE RULES ── */
+.rules-checklist { display: grid; gap: 8px; margin-top: 6px; }
+.rule-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .18s;
+  user-select: none;
+}
+.rule-item:hover { border-color: var(--neon-dim); background: var(--bg-card); }
+.rule-item.checked {
+  border-color: rgba(57,224,122,0.4);
+  background: rgba(57,224,122,0.06);
+}
+.rule-item.checked .rule-check { background: var(--green); border-color: var(--green); color: var(--bg-void); }
+.rule-item.violated {
+  border-color: rgba(240,79,106,0.4);
+  background: rgba(240,79,106,0.06);
+}
+.rule-item.violated .rule-check { background: var(--red); border-color: var(--red); color: #fff; }
+.rule-check {
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: all .18s;
+  font-weight: 700;
+}
+.rule-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex: 1;
+  transition: color .18s;
+}
+.rule-item.checked .rule-text { color: var(--green); }
+.rule-item.violated .rule-text { color: var(--red); text-decoration: line-through; opacity: 0.8; }
+.rule-item-del {
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: color .15s;
+  opacity: 0;
+}
+.rule-item:hover .rule-item-del { opacity: 1; }
+.rule-item-del:hover { color: var(--red); }
+.rules-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.rules-score-bar { flex: 1; height: 6px; background: var(--bg-void); border-radius: 3px; overflow: hidden; }
+.rules-score-fill { height: 100%; border-radius: 3px; transition: width .4s ease, background .3s; }
+.rules-score-pct { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--neon-primary); min-width: 44px; text-align: right; }
+
 </style>
 </head>
 <body>
@@ -1681,6 +1751,20 @@ body::before {
           <div class="calc-value" id="calcRiskDollar">—</div>
         </div>
       </div>
+      <!-- Rules Checklist -->
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>📋 MY TRADING RULES <span id="rulesCountBadge" style="font-size:9px;color:var(--text-dim);margin-left:6px"></span></span>
+          <span onclick="openRulesManager()" style="font-size:9px;color:var(--neon-dim);cursor:pointer;letter-spacing:1px;text-decoration:underline">+ MANAGE RULES</span>
+        </label>
+        <div class="rules-checklist" id="tradeRulesChecklist"></div>
+        <div class="rules-score" id="rulesScoreBar" style="display:none">
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:1px">RULE SCORE</span>
+          <div class="rules-score-bar"><div class="rules-score-fill" id="rulesScoreFill"></div></div>
+          <span class="rules-score-pct" id="rulesScorePct">0%</span>
+        </div>
+      </div>
+
       <!-- Notes -->
       <div class="form-group" style="margin-top:16px">
         <label class="form-label">Notes / Analysis</label>
@@ -1776,6 +1860,7 @@ function loadDB() {
   if (!db.accounts) db.accounts = [];
   if (!db.trades) db.trades = {};
   if (!db.strategies) db.strategies = ['Breakout','Pullback','Reversal','Trend Continuation','Scalp','Swing','ICT','SMC','Price Action'];
+  if (!db.rules) db.rules = [];
   if (db.accounts.length === 0) {
     const defAcc = { id: 'acc_' + Date.now(), name: 'Main.10k', size: 10000, type: 'live', broker: '', created: new Date().toISOString() };
     db.accounts.push(defAcc);
@@ -1948,8 +2033,10 @@ function openTradeModal(tradeId = null) {
   screenshotData = null;
   selectedEmotions = [];
   selectedSetup = null;
+  currentRuleStates = {};
   document.getElementById('tradeModalTitle').textContent = tradeId ? 'EDIT TRADE' : 'LOG NEW TRADE';
   populateStrategySelect();
+  setTimeout(() => renderTradeRulesChecklist(), 20);
   document.getElementById('tradeModal').classList.remove('hidden');
   if (tradeId) {
     const t = getTrades().find(tr => tr.id === tradeId);
@@ -1974,8 +2061,8 @@ function resetTradeForm() {
   document.getElementById('screenshotPreview').innerHTML = '<div class="screenshot-drop-icon">📷</div><div class="screenshot-drop-text">CLICK TO UPLOAD SCREENSHOT</div>';
   document.getElementById('screenshotDrop').classList.remove('has-image');
   currentTags = []; screenshotData = null;
-  selectedEmotions = []; selectedSetup = null;
-  renderEmotionChips(); renderSetupBtns();
+  selectedEmotions = []; selectedSetup = null; currentRuleStates = {};
+  renderEmotionChips(); renderSetupBtns(); renderTradeRulesChecklist();
   updateAutoCalcDisplay(null, null, null);
 }
 
@@ -1997,7 +2084,8 @@ function fillTradeForm(t) {
   currentTags = t.tags ? [...t.tags] : [];
   selectedEmotions = t.emotions ? [...t.emotions] : [];
   selectedSetup = t.setup || null;
-  renderEmotionChips(); renderSetupBtns();
+  currentRuleStates = t.ruleStates ? {...t.ruleStates} : {};
+  renderEmotionChips(); renderSetupBtns(); setTimeout(() => renderTradeRulesChecklist(), 20);
   screenshotData = t.screenshot || null;
   if (screenshotData) {
     document.getElementById('screenshotPreview').innerHTML = `<img src="${screenshotData}" alt="screenshot">`;
@@ -2028,6 +2116,7 @@ function saveTrade() {
     emotions: [...selectedEmotions],
     setup: selectedSetup,
     riskok: document.getElementById('t_riskok').value,
+    ruleStates: {...currentRuleStates},
     notes: document.getElementById('t_notes').value.trim(),
     screenshot: screenshotData,
     created: editingTradeId ? undefined : new Date().toISOString()
@@ -2495,6 +2584,32 @@ function viewTradeDetail(id) {
       </div>
     </div>` : ''}
     ${t.riskok ? `<div style="margin-bottom:16px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)">RISK PLAN: ${t.riskok==='yes'?'<span style="color:var(--green)">✓ Respected</span>':t.riskok==='no'?'<span style="color:var(--red)">✗ Violated</span>':'<span style="color:var(--yellow)">⚡ Partial</span>'}</div>` : ''}
+    ${t.ruleStates && Object.keys(t.ruleStates).length > 0 && db.rules && db.rules.length > 0 ? `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title" style="margin-bottom:12px">📋 RULES CHECKLIST</div>
+      <div style="display:grid;gap:6px">
+        ${db.rules.map(r => {
+          const state = t.ruleStates[r.id];
+          const color = state === 'checked' ? 'var(--green)' : state === 'violated' ? 'var(--red)' : 'var(--text-dim)';
+          const icon  = state === 'checked' ? '✓' : state === 'violated' ? '✗' : '○';
+          return `<div style="display:flex;gap:10px;align-items:center;padding:8px 12px;background:var(--bg-elevated);border:1px solid ${state==='checked'?'rgba(57,224,122,0.25)':state==='violated'?'rgba(240,79,106,0.25)':'var(--border)'};border-radius:5px">
+            <span style="font-family:var(--font-display);font-size:13px;font-weight:700;color:${color};width:16px">${icon}</span>
+            <span style="font-family:var(--font-body);font-size:13px;color:${state?color:'var(--text-dim)'};${state==='violated'?'text-decoration:line-through;opacity:0.7':''}"> ${r.text}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      ${(() => {
+        const answered = db.rules.filter(r => t.ruleStates[r.id]);
+        const checked = answered.filter(r => t.ruleStates[r.id] === 'checked');
+        const pct = answered.length > 0 ? Math.round(checked.length/answered.length*100) : 0;
+        const col = pct>=80?'var(--green)':pct>=50?'var(--yellow)':'var(--red)';
+        return answered.length > 0 ? `<div style="margin-top:12px;display:flex;align-items:center;gap:12px;padding:8px 0">
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:1px">RULE SCORE</span>
+          <div style="flex:1;height:5px;background:var(--bg-void);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>
+          <span style="font-family:var(--font-display);font-size:14px;font-weight:700;color:${col}">${pct}%</span>
+        </div>` : '';
+      })()}
+    </div>` : ''}
     ${t.tags && t.tags.length ? `<div style="margin-bottom:20px;display:flex;gap:8px;flex-wrap:wrap">${t.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>` : ''}
     ${t.notes ? `<div class="card" style="margin-bottom:20px"><div class="card-title">TRADE NOTES</div><div style="font-family:var(--font-body);font-size:15px;color:var(--text-secondary);line-height:1.8;white-space:pre-wrap">${t.notes}</div></div>` : ''}
     ${t.screenshot ? `<div class="card"><div class="card-title">CHART SCREENSHOT</div><img src="${t.screenshot}" style="max-width:100%;border-radius:6px;margin-top:8px"></div>` : ''}
@@ -3014,6 +3129,120 @@ function calcRiskPosition() {
 }
 
 
+
+// ══════════════════════════════════════════
+// TRADING RULES SYSTEM
+// ══════════════════════════════════════════
+let currentRuleStates = {}; // { ruleId: 'checked' | 'violated' | null }
+
+function openRulesManager() {
+  document.getElementById('rulesModal').classList.remove('hidden');
+  renderRuleManagerList();
+}
+function closeRulesModal() {
+  document.getElementById('rulesModal').classList.add('hidden');
+  renderTradeRulesChecklist(); // refresh checklist with updated rules
+}
+
+function addRule() {
+  const inp = document.getElementById('newRuleInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  if (!db.rules) db.rules = [];
+  const rule = { id: 'rule_' + Date.now(), text };
+  db.rules.push(rule);
+  saveDB();
+  renderRuleManagerList();
+  renderTradeRulesChecklist();
+  showNotification('Rule added!', 'success');
+  inp.value = '';
+  inp.focus();
+}
+
+function deleteRule(id) {
+  db.rules = (db.rules || []).filter(r => r.id !== id);
+  delete currentRuleStates[id];
+  saveDB();
+  renderRuleManagerList();
+  renderTradeRulesChecklist();
+}
+
+function renderRuleManagerList() {
+  const el = document.getElementById('ruleManagerList');
+  if (!el) return;
+  const rules = db.rules || [];
+  if (rules.length === 0) {
+    el.innerHTML = '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:12px">No rules yet. Add your first rule above.</div>';
+    return;
+  }
+  el.innerHTML = rules.map((r, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);min-width:18px">${i+1}.</span>
+      <span style="font-family:var(--font-body);font-size:13px;color:var(--text-secondary);flex:1">${r.text}</span>
+      <span onclick="deleteRule('${r.id}')" style="color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:3px;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">×</span>
+    </div>
+  `).join('');
+}
+
+function renderTradeRulesChecklist() {
+  const el = document.getElementById('tradeRulesChecklist');
+  if (!el) return;
+  const rules = db.rules || [];
+  const badge = document.getElementById('rulesCountBadge');
+  const scoreBar = document.getElementById('rulesScoreBar');
+
+  if (rules.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:16px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">
+      No rules defined yet. <span onclick="openRulesManager()" style="color:var(--neon-dim);cursor:pointer;text-decoration:underline">Add your rules →</span>
+    </div>`;
+    if (badge) badge.textContent = '';
+    if (scoreBar) scoreBar.style.display = 'none';
+    return;
+  }
+
+  if (badge) badge.textContent = '(' + rules.length + ' rules)';
+  if (scoreBar) scoreBar.style.display = 'flex';
+
+  el.innerHTML = rules.map(r => {
+    const state = currentRuleStates[r.id] || null;
+    const cls = state === 'checked' ? 'checked' : state === 'violated' ? 'violated' : '';
+    const checkSymbol = state === 'checked' ? '✓' : state === 'violated' ? '✗' : '';
+    return `<div class="rule-item ${cls}" onclick="cycleRuleState('${r.id}')">
+      <div class="rule-check">${checkSymbol}</div>
+      <span class="rule-text">${r.text}</span>
+      <span class="rule-item-del" onclick="event.stopPropagation();deleteRule('${r.id}')">×</span>
+    </div>`;
+  }).join('');
+
+  updateRulesScore();
+}
+
+function cycleRuleState(id) {
+  const current = currentRuleStates[id] || null;
+  // cycle: null → checked → violated → null
+  currentRuleStates[id] = current === null ? 'checked' : current === 'checked' ? 'violated' : null;
+  renderTradeRulesChecklist();
+}
+
+function updateRulesScore() {
+  const rules = db.rules || [];
+  if (rules.length === 0) return;
+  const checked = rules.filter(r => currentRuleStates[r.id] === 'checked').length;
+  const violated = rules.filter(r => currentRuleStates[r.id] === 'violated').length;
+  const answered = checked + violated;
+  const pct = answered > 0 ? Math.round((checked / answered) * 100) : 0;
+  const fillEl = document.getElementById('rulesScoreFill');
+  const pctEl  = document.getElementById('rulesScorePct');
+  if (fillEl) {
+    fillEl.style.width = pct + '%';
+    fillEl.style.background = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+  }
+  if (pctEl) {
+    pctEl.textContent = answered > 0 ? pct + '%' : '—';
+    pctEl.style.color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+  }
+}
+
 // ══════════════════════════════════════════
 // LOT SIZE CALCULATOR
 // ══════════════════════════════════════════
@@ -3349,10 +3578,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('accountModal').addEventListener('click', function(e) { if(e.target===this) closeAccountModal(); });
   document.getElementById('dayModal').addEventListener('click', function(e) { if(e.target===this) closeDayModal(); });
   document.getElementById('strategyModal').addEventListener('click', function(e) { if(e.target===this) closeStrategyModal(); });
+  document.getElementById('rulesModal').addEventListener('click', function(e) { if(e.target===this) closeRulesModal(); });
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      closeTradeModal(); closeAccountModal(); closeDayModal(); closeStrategyModal();
+      closeTradeModal(); closeAccountModal(); closeDayModal(); closeStrategyModal(); closeRulesModal();
     }
     if (e.ctrlKey && e.key === 'n') { e.preventDefault(); openTradeModal(); }
   });
@@ -3378,6 +3608,35 @@ document.addEventListener('DOMContentLoaded', () => {
       <div id="strategyList" style="display:flex;flex-wrap:wrap;gap:4px;min-height:60px"></div>
       <div style="margin-top:20px;text-align:right">
         <button class="btn btn-outline btn-sm" onclick="closeStrategyModal()">DONE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Rules Manager Modal -->
+<div class="modal-overlay hidden" id="rulesModal">
+  <div class="modal sm">
+    <div class="modal-header">
+      <div class="modal-title">MY TRADING RULES</div>
+      <button class="modal-close" onclick="closeRulesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px">
+        Define your rules once — check them off on every trade.
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Add New Rule</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="newRuleInput" placeholder="e.g. Wait for market structure confirmation" style="flex:1" onkeydown="if(event.key==='Enter')addRule()">
+          <button class="btn btn-primary btn-sm" onclick="addRule()">ADD</button>
+        </div>
+      </div>
+      <div class="card-title" style="margin-bottom:10px">YOUR RULES</div>
+      <div id="ruleManagerList" style="display:grid;gap:6px;min-height:60px"></div>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:space-between;align-items:center">
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">Rules are saved globally for all trades</span>
+        <button class="btn btn-outline btn-sm" onclick="closeRulesModal()">DONE</button>
       </div>
     </div>
   </div>
