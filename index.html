@@ -1034,7 +1034,18 @@ function goToPayment() {
   if (!isAllowed(em)) { showErr('su_err','This email is not on the approved access list. Contact the admin.'); return; }
   const users = getUsers();
   if (users.find(u => u.em === em)) { showErr('su_err','An account with this email already exists.'); return; }
-  // Move to payment
+
+  // Admins skip payment entirely
+  if (isAdmin(em)) {
+    const ln = document.getElementById('su_ln').value.trim();
+    const user = { fn, ln, nm: fn+(ln?' '+ln:''), em, pw, plan:'admin', created: new Date().toISOString() };
+    users.push(user); saveUsers(users);
+    localStorage.setItem('st_session', JSON.stringify(user));
+    enterApp(fn, false);
+    return;
+  }
+
+  // Everyone else goes to payment
   showStep('fPayment');
   const planLabel = selectedPlan === 'pro' ? 'Pro Plan' : 'Elite Plan';
   const price     = selectedPlan === 'pro' ? '$19 / month' : '$49 / month';
@@ -1099,7 +1110,8 @@ function doLogin() {
   const pw = document.getElementById('li_pw').value;
   if (!em || !pw) { showErr('li_err','Please fill in all fields.'); return; }
   if (!isAllowed(em)) { showErr('li_err','Access denied. Contact the admin to get access.'); return; }
-  const user = getUsers().find(u => u.em === em && u.pw === pw);
+  const users = getUsers();
+  const user = users.find(u => u.em === em && u.pw === pw);
   if (!user) { showErr('li_err','Incorrect email or password.'); return; }
   localStorage.setItem('st_session', JSON.stringify(user));
   enterApp(user.fn || 'Trader', false);
