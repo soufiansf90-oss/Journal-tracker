@@ -614,7 +614,7 @@ footer {
 <section id="pricing" class="sec" style="background:var(--bg2)">
   <div class="centered rv"><p class="sec-label">Pricing</p></div>
   <h2 class="sec-h centered rv">Choose your <span>plan</span></h2>
-  <p class="sec-p centered rv">Pick the plan that fits your trading. Cancel anytime.</p>
+  <p class="sec-p centered rv">Pro billed monthly. Elite is a one-time payment — yours forever.</p>
   <div class="pricing-grid">
     <div class="price-card rv">
       <div class="price-tier">Pro</div>
@@ -633,8 +633,8 @@ footer {
     <div class="price-card popular rv">
       <div class="price-badge">Most popular</div>
       <div class="price-tier">Elite</div>
-      <div class="price-amount">$49</div>
-      <div class="price-period">per month</div>
+      <div class="price-amount">$79</div>
+      <div class="price-period">Lifetime access</div>
       <ul class="price-features">
         <li>Everything in Pro</li>
         <li>Broker integration</li>
@@ -731,7 +731,7 @@ footer {
           <div id="planElite" class="plan-option selected" onclick="selectPlan('elite')">
             <div style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:4px">POPULAR</div>
             <div class="plan-name">Elite</div>
-            <div class="plan-price">$49<span>/mo</span></div>
+            <div class="plan-price">$79<span> once</span></div>
             <div class="plan-feat">Everything + priority support</div>
           </div>
         </div>
@@ -1016,7 +1016,7 @@ function selectPlan(plan) {
 
 function goToDetails() {
   showStep('fSignup');
-  const label = selectedPlan === 'pro' ? 'Pro — $19/mo' : 'Elite — $49/mo';
+  const label = selectedPlan === 'pro' ? 'Pro — $19/mo' : 'Elite — $79 lifetime';
   document.getElementById('selectedPlanBadge').textContent = label;
 }
 function backToPlan() { showStep('fPlan'); }
@@ -1048,11 +1048,11 @@ function goToPayment() {
   // Everyone else goes to payment
   showStep('fPayment');
   const planLabel = selectedPlan === 'pro' ? 'Pro Plan' : 'Elite Plan';
-  const price     = selectedPlan === 'pro' ? '$19 / month' : '$49 / month';
+  const price     = selectedPlan === 'pro' ? '$19 / month' : '$79 one-time';
   document.getElementById('payPlanBadge').textContent = planLabel;
   document.getElementById('payPlanName').textContent  = planLabel;
   document.getElementById('payPlanPrice').textContent = price;
-  document.getElementById('payBtnText').textContent   = `Pay ${selectedPlan === 'pro' ? '$19' : '$49'} & Activate →`;
+  document.getElementById('payBtnText').textContent   = `Pay ${selectedPlan === 'pro' ? '$19' : '$79'} & Activate →`;
 }
 function backToDetails() { showStep('fSignup'); }
 
