@@ -3711,12 +3711,10 @@ function showNotification(msg, type = '') {
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // ── SESSION GUARD ──
+  // ── SESSION ──
   const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
-  if (!session) { window.location.href = 'index.html'; return; }
-  // Show user name in sidebar
   const userEl = document.getElementById('sidebar-user');
-  if (userEl) userEl.textContent = (session.nm || 'TRADER').toUpperCase();
+  if (userEl) userEl.textContent = (session?.nm || 'TRADER').toUpperCase();
 
   loadDB();
   renderAccountSelect();
