@@ -273,7 +273,7 @@ h1 span { color: var(--accent); }
 .tool-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
 
 /* ── PRICING SECTION ── */
-.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 900px; margin: 0 auto; }
+.pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 660px; margin: 0 auto; }
 .price-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 32px; }
 .price-card.popular { border-color: var(--accent); position: relative; }
 .price-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
@@ -305,6 +305,19 @@ footer {
 /* ── DIVIDER ── */
 .div { border: none; border-top: 1px solid var(--border); }
 
+/* ── PLAN OPTIONS ── */
+.plan-option {
+  border: 2px solid var(--border); border-radius: 12px;
+  padding: 16px 14px; cursor: pointer; transition: all .2s;
+  background: var(--bg3);
+}
+.plan-option:hover { border-color: var(--accent); }
+.plan-option.selected { border-color: var(--accent); background: var(--accentbg); }
+.plan-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.plan-price { font-size: 22px; font-weight: 800; color: var(--text); font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; margin-bottom: 6px; }
+.plan-price span { font-size: 12px; font-weight: 500; color: var(--text2); }
+.plan-feat { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
 /* ═══════════════════════════════════════
    AUTH MODAL — PROFESSIONAL REDESIGN
 ═══════════════════════════════════════ */
@@ -322,8 +335,9 @@ footer {
   border: 1px solid var(--border);
   border-radius: 20px;
   width: 460px; max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 24px 80px rgba(0,0,0,0.4);
-  overflow: hidden;
   animation: boxIn .28s cubic-bezier(.34,1.26,.64,1);
 }
 @keyframes boxIn { from{transform:scale(.94) translateY(10px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
@@ -599,10 +613,39 @@ footer {
 <!-- ══ PRICING ══ -->
 <section id="pricing" class="sec" style="background:var(--bg2)">
   <div class="centered rv"><p class="sec-label">Pricing</p></div>
-  <h2 class="sec-h centered rv">Simple, transparent <span>pricing</span></h2>
-  <p class="sec-p centered rv">Simple, transparent pricing.</p>
+  <h2 class="sec-h centered rv">Choose your <span>plan</span></h2>
+  <p class="sec-p centered rv">Pick the plan that fits your trading. Cancel anytime.</p>
   <div class="pricing-grid">
-    
+    <div class="price-card rv">
+      <div class="price-tier">Pro</div>
+      <div class="price-amount">$19</div>
+      <div class="price-period">per month</div>
+      <ul class="price-features">
+        <li>Unlimited trades</li>
+        <li>All analytics & charts</li>
+        <li>AI Coach reports</li>
+        <li>Monte Carlo engine</li>
+        <li>All calculators</li>
+        <li>Multi-account support</li>
+      </ul>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="openAuth('signup','pro')">Get Pro →</button>
+    </div>
+    <div class="price-card popular rv">
+      <div class="price-badge">Most popular</div>
+      <div class="price-tier">Elite</div>
+      <div class="price-amount">$49</div>
+      <div class="price-period">per month</div>
+      <ul class="price-features">
+        <li>Everything in Pro</li>
+        <li>Broker integration</li>
+        <li>Priority AI coaching</li>
+        <li>Custom strategies</li>
+        <li>Export to PDF/Excel</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openAuth('signup','elite')">Get Elite →</button>
+    </div>
+  </div>
 </section>
 
 <hr class="div">
@@ -627,7 +670,9 @@ footer {
 
 <!-- ══ AUTH MODAL ══ -->
 <div class="overlay hidden" id="authModal">
-  <div class="auth-box">
+  <div class="auth-box" id="authBox">
+
+    <!-- HEADER -->
     <div class="auth-header">
       <div class="auth-logo">
         <div class="auth-logo-icon">📈</div>
@@ -636,7 +681,8 @@ footer {
       <button class="auth-close" onclick="closeAuth()">✕</button>
     </div>
 
-    <div style="padding: 20px 36px 0">
+    <!-- TABS -->
+    <div style="padding:20px 36px 0">
       <div class="auth-tabs">
         <button class="auth-tab on" id="tLogin"  onclick="switchTab('login')">Log in</button>
         <button class="auth-tab"    id="tSignup" onclick="switchTab('signup')">Create account</button>
@@ -645,8 +691,8 @@ footer {
 
     <div class="auth-body">
 
-      <!-- LOGIN FORM -->
-      <form id="fLogin" class="auth-form" onsubmit="e => e.preventDefault()">
+      <!-- ── LOGIN ── -->
+      <form id="fLogin" class="auth-form" onsubmit="return false">
         <div class="field">
           <label class="label">Email address</label>
           <div class="input-wrap">
@@ -658,26 +704,52 @@ footer {
           <label class="label">Password</label>
           <div class="input-wrap password-wrap">
             <span class="input-icon">🔒</span>
-            <input class="inp" type="password" id="li_pw" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+            <input class="inp" type="password" id="li_pw" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()">
             <button class="pass-toggle" type="button" onclick="togglePass('li_pw',this)">👁</button>
           </div>
+        </div>
+        <div style="text-align:right;margin-top:-8px">
+          <button type="button" onclick="openForgot()" style="background:none;border:none;font:500 12px 'Inter',sans-serif;color:var(--accent);cursor:pointer;padding:0">Forgot password?</button>
         </div>
         <div class="auth-err" id="li_err"></div>
         <button class="auth-submit" type="button" onclick="doLogin()">Log in →</button>
         <div class="auth-divider">or</div>
         <button class="guest-btn" type="button" onclick="doGuest()">👀 Preview with demo data</button>
-        <div class="guest-note">⚠️ Demo mode shows sample data only. You won't be able to add, edit or save anything.</div>
+        <div class="guest-note">⚠️ Demo mode only. You cannot add or save trades.</div>
       </form>
 
-      <!-- SIGNUP FORM -->
-      <form id="fSignup" class="auth-form" style="display:none" onsubmit="e => e.preventDefault()">
+      <!-- ── SIGNUP STEP 1 — PLAN ── -->
+      <div id="fPlan" style="display:none;flex-direction:column;gap:16px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Choose your plan</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:18px">You can change anytime.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div id="planPro" class="plan-option" onclick="selectPlan('pro')">
+            <div class="plan-name">Pro</div>
+            <div class="plan-price">$19<span>/mo</span></div>
+            <div class="plan-feat">All analytics, AI coach, calculators</div>
+          </div>
+          <div id="planElite" class="plan-option selected" onclick="selectPlan('elite')">
+            <div style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:4px">POPULAR</div>
+            <div class="plan-name">Elite</div>
+            <div class="plan-price">$49<span>/mo</span></div>
+            <div class="plan-feat">Everything + priority support</div>
+          </div>
+        </div>
+        <div class="auth-err" id="plan_err"></div>
+        <button class="auth-submit" onclick="goToDetails()">Continue →</button>
+      </div>
+
+      <!-- ── SIGNUP STEP 2 — DETAILS ── -->
+      <form id="fSignup" class="auth-form" style="display:none" onsubmit="return false">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <button type="button" onclick="backToPlan()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font:500 12px 'Inter',sans-serif;color:var(--text2);cursor:pointer">← Back</button>
+          <div id="selectedPlanBadge" style="font-size:11px;font-weight:600;color:var(--accent);background:var(--accentbg);padding:4px 10px;border-radius:20px;border:1px solid rgba(59,130,246,0.2)"></div>
+        </div>
         <div class="field-row">
           <div class="field">
             <label class="label">First name</label>
-            <div class="input-wrap">
-              <span class="input-icon">👤</span>
-              <input class="inp" type="text" id="su_fn" placeholder="Ahmed" autocomplete="given-name">
-            </div>
+            <div class="input-wrap"><span class="input-icon">👤</span>
+            <input class="inp" type="text" id="su_fn" placeholder="Ahmed" autocomplete="given-name"></div>
           </div>
           <div class="field">
             <label class="label">Last name</label>
@@ -686,29 +758,104 @@ footer {
         </div>
         <div class="field">
           <label class="label">Email address</label>
-          <div class="input-wrap">
-            <span class="input-icon">✉️</span>
-            <input class="inp" type="email" id="su_em" placeholder="you@example.com" autocomplete="email">
-          </div>
+          <div class="input-wrap"><span class="input-icon">✉️</span>
+          <input class="inp" type="email" id="su_em" placeholder="you@example.com" autocomplete="email"></div>
         </div>
         <div class="field">
           <label class="label">Password</label>
-          <div class="input-wrap password-wrap">
-            <span class="input-icon">🔒</span>
-            <input class="inp" type="password" id="su_pw" placeholder="Min 8 characters" autocomplete="new-password" oninput="checkStrength(this.value)" onkeydown="if(event.key==='Enter')doSignup()">
+          <div class="input-wrap password-wrap"><span class="input-icon">🔒</span>
+            <input class="inp" type="password" id="su_pw" placeholder="Min 8 characters" oninput="checkStrength(this.value)" onkeydown="if(event.key==='Enter')goToPayment()">
             <button class="pass-toggle" type="button" onclick="togglePass('su_pw',this)">👁</button>
           </div>
           <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
         </div>
         <div class="field">
-          <label class="terms">
-            <input type="checkbox" id="su_terms">
+          <label class="terms"><input type="checkbox" id="su_terms">
             <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
           </label>
         </div>
         <div class="auth-err" id="su_err"></div>
-        <button class="auth-submit" type="button" onclick="doSignup()">Create account →</button>
+        <button class="auth-submit" type="button" onclick="goToPayment()">Continue to payment →</button>
       </form>
+
+      <!-- ── SIGNUP STEP 3 — PAYMENT ── -->
+      <div id="fPayment" style="display:none;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <button onclick="backToDetails()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font:500 12px 'Inter',sans-serif;color:var(--text2);cursor:pointer">← Back</button>
+          <div id="payPlanBadge" style="font-size:11px;font-weight:600;color:var(--accent);background:var(--accentbg);padding:4px 10px;border-radius:20px;border:1px solid rgba(59,130,246,0.2)"></div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600">ORDER SUMMARY</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:var(--text)" id="payPlanName"></span>
+            <span style="font-size:16px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace" id="payPlanPrice"></span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px">Billed monthly • Cancel anytime</div>
+        </div>
+        <div class="field">
+          <label class="label">Card number</label>
+          <div class="input-wrap"><span class="input-icon">💳</span>
+          <input class="inp" type="text" id="pay_card" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field">
+            <label class="label">Expiry</label>
+            <input class="inp no-icon" type="text" id="pay_exp" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)">
+          </div>
+          <div class="field">
+            <label class="label">CVV</label>
+            <input class="inp no-icon" type="text" id="pay_cvv" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Name on card</label>
+          <input class="inp no-icon" type="text" id="pay_name" placeholder="Ahmed Al-Rashid">
+        </div>
+        <div class="auth-err" id="pay_err"></div>
+        <button class="auth-submit" id="payBtn" onclick="processPayment()">
+          <span id="payBtnText">Pay & Activate Account →</span>
+        </button>
+        <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">🔒 Secured payment · SSL encrypted</div>
+      </div>
+
+      <!-- ── FORGOT PASSWORD ── -->
+      <div id="fForgot" style="display:none;flex-direction:column;gap:16px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Reset your password</div>
+          <div style="font-size:12px;color:var(--text2)">Enter your email and we'll send you a 6-digit code.</div>
+        </div>
+        <div class="field">
+          <label class="label">Email address</label>
+          <div class="input-wrap"><span class="input-icon">✉️</span>
+          <input class="inp" type="email" id="fp_em" placeholder="you@example.com" onkeydown="if(event.key==='Enter')sendResetCode()"></div>
+        </div>
+        <div class="auth-err" id="fp_err"></div>
+        <div id="fp_success" style="font-size:12px;color:var(--green);padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;display:none"></div>
+        <button class="auth-submit" onclick="sendResetCode()">Send reset code →</button>
+        <button onclick="backToLogin()" style="background:none;border:none;font:500 13px 'Inter',sans-serif;color:var(--text2);cursor:pointer;text-align:center">← Back to login</button>
+      </div>
+
+      <!-- ── RESET CODE VERIFY ── -->
+      <div id="fReset" style="display:none;flex-direction:column;gap:16px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Enter the code</div>
+          <div style="font-size:12px;color:var(--text2)" id="reset_subtitle">Check your email for the 6-digit code.</div>
+        </div>
+        <div class="field">
+          <label class="label">6-digit code</label>
+          <input class="inp no-icon" type="text" id="fp_code" placeholder="000000" maxlength="6" style="text-align:center;font-size:20px;font-family:'JetBrains Mono',monospace;letter-spacing:6px" oninput="this.value=this.value.replace(/\D/g,'')">
+        </div>
+        <div class="field">
+          <label class="label">New password</label>
+          <div class="input-wrap password-wrap"><span class="input-icon">🔒</span>
+            <input class="inp" type="password" id="fp_newpw" placeholder="Min 8 characters" onkeydown="if(event.key==='Enter')confirmReset()">
+            <button class="pass-toggle" type="button" onclick="togglePass('fp_newpw',this)">👁</button>
+          </div>
+        </div>
+        <div class="auth-err" id="reset_err"></div>
+        <button class="auth-submit" onclick="confirmReset()">Reset password →</button>
+        <button onclick="openForgot()" style="background:none;border:none;font:500 12px 'Inter',sans-serif;color:var(--text2);cursor:pointer;text-align:center">Didn't get the code? Resend</button>
+      </div>
 
     </div>
   </div>
@@ -718,56 +865,127 @@ footer {
 <div id="loading">
   <div class="ld-icon">📈</div>
   <div class="ld-name">Shadow Tracker</div>
-  <div class="ld-welcome" id="ld-msg">Welcome back</div>
+  <div class="ld-welcome" id="ld-msg">Welcome</div>
   <div class="ld-bar"><div class="ld-fill" id="ld-fill"></div></div>
 </div>
 
+<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
 <script>
-/* ── THEME ── */
+// ══════════════════════════════════════════
+// EMAILJS SETUP
+// 1. Go to https://emailjs.com — create FREE account
+// 2. Add Gmail as email service → copy your Service ID
+// 3. Create email template with variables: {{to_email}}, {{code}}, {{name}}
+// 4. Copy your Public Key from Account → API Keys
+// Replace the 3 values below:
+// ══════════════════════════════════════════
+const EJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // ← from EmailJS
+const EJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // ← your Gmail service
+const EJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // ← your template
+try { emailjs.init(EJS_PUBLIC_KEY); } catch(e) {}
+
+// ══════════════════════════════════════════
+// ACCESS CONTROL
+// ══════════════════════════════════════════
+const ADMIN_EMAILS = ['iliasgl14@gmail.com', 'soufiansf90@gmail.com'];
+
+function getAllowedEmails() {
+  try { return JSON.parse(localStorage.getItem('st_allowed') || '[]'); } catch { return []; }
+}
+function saveAllowedEmails(list) { localStorage.setItem('st_allowed', JSON.stringify(list)); }
+function isAdmin(em) { return em ? ADMIN_EMAILS.includes(em.toLowerCase()) : false; }
+function isAllowed(em) {
+  if (!em) return false;
+  const e = em.toLowerCase();
+  return isAdmin(e) || getAllowedEmails().includes(e);
+}
+// Pre-seed admin emails on first load
+(function seedAdmins() {
+  const list = getAllowedEmails();
+  let changed = false;
+  ADMIN_EMAILS.forEach(e => { if (!list.includes(e)) { list.push(e); changed = true; } });
+  if (changed) saveAllowedEmails(list);
+})();
+
+// ── USERS ──
+function getUsers() { try { return JSON.parse(localStorage.getItem('st_users') || '[]'); } catch { return []; } }
+function saveUsers(u) { localStorage.setItem('st_users', JSON.stringify(u)); }
+
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
 const savedTheme = localStorage.getItem('st_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
 document.getElementById('themeBtn').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-
 function toggleTheme() {
-  const curr = document.documentElement.getAttribute('data-theme');
-  const next = curr === 'dark' ? 'light' : 'dark';
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('st_theme', next);
   document.getElementById('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
 }
 
-/* ── SCROLL REVEAL ── */
+// ══════════════════════════════════════════
+// SCROLL REVEAL
+// ══════════════════════════════════════════
 const obs = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('on'); });
 }, { threshold: 0.1 });
-document.querySelectorAll('.rv').forEach((el, i) => {
+document.querySelectorAll('.rv').forEach((el) => {
   const siblings = [...el.parentElement.querySelectorAll(':scope > .rv')];
   el.style.transitionDelay = (siblings.indexOf(el) * 0.07) + 's';
   obs.observe(el);
 });
 
-/* ── AUTH MODAL ── */
-function openAuth(tab = 'login') {
+// ══════════════════════════════════════════
+// AUTH MODAL
+// ══════════════════════════════════════════
+let selectedPlan = 'elite';
+
+function openAuth(tab = 'login', plan = null) {
   if (tab === 'guest') { doGuest(); return; }
+  if (plan) selectedPlan = plan;
   document.getElementById('authModal').classList.remove('hidden');
-  switchTab(tab);
+  if (tab === 'signup') {
+    showStep('fPlan');
+    document.getElementById('tLogin').classList.remove('on');
+    document.getElementById('tSignup').classList.add('on');
+    if (plan) { selectPlan(plan); }
+  } else {
+    switchTab('login');
+  }
 }
-function closeAuth() { document.getElementById('authModal').classList.add('hidden'); }
+function closeAuth() {
+  document.getElementById('authModal').classList.add('hidden');
+  resetAuth();
+}
+function resetAuth() {
+  ['li_err','su_err','plan_err','pay_err','fp_err','reset_err'].forEach(id => {
+    const el = document.getElementById(id); if(el) { el.style.display='none'; el.textContent=''; }
+  });
+}
 document.getElementById('authModal').addEventListener('click', function(e) { if (e.target === this) closeAuth(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuth(); });
 
+function showStep(id) {
+  ['fLogin','fPlan','fSignup','fPayment','fForgot','fReset'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById(id);
+  if (target) target.style.display = 'flex';
+}
+
 function switchTab(t) {
-  document.getElementById('fLogin').style.display  = t === 'login'  ? 'flex' : 'none';
-  document.getElementById('fSignup').style.display = t === 'signup' ? 'flex' : 'none';
   document.getElementById('tLogin').classList.toggle('on',  t === 'login');
   document.getElementById('tSignup').classList.toggle('on', t === 'signup');
-  document.getElementById('li_err').style.display = 'none';
-  document.getElementById('su_err').style.display = 'none';
+  if (t === 'login') showStep('fLogin');
+  else showStep('fPlan');
+  resetAuth();
 }
 
 function showErr(id, msg) {
   const el = document.getElementById(id);
-  el.textContent = msg; el.style.display = 'block';
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
 
 function togglePass(id, btn) {
@@ -785,58 +1003,106 @@ function checkStrength(val) {
   if (/[^A-Za-z0-9]/.test(val)) score++;
   const colors = ['#ef4444','#f97316','#eab308','#22c55e'];
   const widths  = ['25%','50%','75%','100%'];
-  fill.style.width = val.length ? widths[score - 1] || '10%' : '0%';
-  fill.style.background = val.length ? colors[score - 1] || '#ef4444' : 'transparent';
+  fill.style.width = val.length ? (widths[score-1]||'10%') : '0%';
+  fill.style.background = val.length ? (colors[score-1]||'#ef4444') : 'transparent';
 }
 
-/* ── ACCESS CONTROL ── */
-// ADMIN: set your email here — only you can manage the whitelist
-const ADMIN_EMAIL = 'admin@shadowtracker.com'; // ← change this to your email
-
-function getAllowedEmails() {
-  try { return JSON.parse(localStorage.getItem('st_allowed') || '[]'); } catch { return []; }
-}
-function saveAllowedEmails(list) { localStorage.setItem('st_allowed', JSON.stringify(list)); }
-function isAllowed(em) {
-  const list = getAllowedEmails();
-  // Admin always allowed, empty list = admin-only mode
-  return em === ADMIN_EMAIL || list.includes(em.toLowerCase());
+// ── PLAN SELECTION ──
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.getElementById('planPro').classList.toggle('selected',   plan === 'pro');
+  document.getElementById('planElite').classList.toggle('selected', plan === 'elite');
 }
 
-/* ── USERS ── */
-function getUsers() { try { return JSON.parse(localStorage.getItem('st_users') || '[]'); } catch { return []; } }
-function saveUsers(u) { localStorage.setItem('st_users', JSON.stringify(u)); }
-
-function doLogin() {
-  const em = document.getElementById('li_em').value.trim().toLowerCase();
-  const pw = document.getElementById('li_pw').value;
-  if (!em || !pw) { showErr('li_err', 'Please fill in all fields.'); return; }
-  if (!isAllowed(em)) { showErr('li_err', 'Access denied. This account is not on the approved list.'); return; }
-  const user = getUsers().find(u => u.em === em && u.pw === pw);
-  if (!user) { showErr('li_err', 'Incorrect email or password.'); return; }
-  localStorage.setItem('st_session', JSON.stringify(user));
-  // Open admin panel if admin
-  if (em === ADMIN_EMAIL) { enterApp(user.fn || 'Admin', false); return; }
-  enterApp(user.fn || 'Trader', false);
+function goToDetails() {
+  showStep('fSignup');
+  const label = selectedPlan === 'pro' ? 'Pro — $19/mo' : 'Elite — $49/mo';
+  document.getElementById('selectedPlanBadge').textContent = label;
 }
+function backToPlan() { showStep('fPlan'); }
 
-function doSignup() {
+// ── DETAILS → PAYMENT ──
+function goToPayment() {
   const fn = document.getElementById('su_fn').value.trim();
-  const ln = document.getElementById('su_ln').value.trim();
   const em = document.getElementById('su_em').value.trim().toLowerCase();
   const pw = document.getElementById('su_pw').value;
   const terms = document.getElementById('su_terms').checked;
-  if (!fn || !em || !pw) { showErr('su_err', 'Please fill in all required fields.'); return; }
-  if (!/\S+@\S+\.\S+/.test(em)) { showErr('su_err', 'Please enter a valid email address.'); return; }
-  if (pw.length < 8) { showErr('su_err', 'Password must be at least 8 characters.'); return; }
-  if (!terms) { showErr('su_err', 'Please accept the Terms of Service to continue.'); return; }
-  if (!isAllowed(em)) { showErr('su_err', 'This email is not on the approved access list. Contact the admin.'); return; }
+  if (!fn || !em || !pw) { showErr('su_err','Please fill in all required fields.'); return; }
+  if (!/\S+@\S+\.\S+/.test(em)) { showErr('su_err','Please enter a valid email address.'); return; }
+  if (pw.length < 8) { showErr('su_err','Password must be at least 8 characters.'); return; }
+  if (!terms) { showErr('su_err','Please accept the Terms of Service.'); return; }
+  if (!isAllowed(em)) { showErr('su_err','This email is not on the approved access list. Contact the admin.'); return; }
   const users = getUsers();
-  if (users.find(u => u.em === em)) { showErr('su_err', 'An account with this email already exists.'); return; }
-  const user = { fn, ln, nm: fn + (ln ? ' ' + ln : ''), em, pw, created: new Date().toISOString() };
-  users.push(user); saveUsers(users);
+  if (users.find(u => u.em === em)) { showErr('su_err','An account with this email already exists.'); return; }
+  // Move to payment
+  showStep('fPayment');
+  const planLabel = selectedPlan === 'pro' ? 'Pro Plan' : 'Elite Plan';
+  const price     = selectedPlan === 'pro' ? '$19 / month' : '$49 / month';
+  document.getElementById('payPlanBadge').textContent = planLabel;
+  document.getElementById('payPlanName').textContent  = planLabel;
+  document.getElementById('payPlanPrice').textContent = price;
+  document.getElementById('payBtnText').textContent   = `Pay ${selectedPlan === 'pro' ? '$19' : '$49'} & Activate →`;
+}
+function backToDetails() { showStep('fSignup'); }
+
+// ── CARD FORMATTING ──
+function formatCard(inp) {
+  let v = inp.value.replace(/\D/g,'').substring(0,16);
+  inp.value = v.match(/.{1,4}/g)?.join(' ') || v;
+}
+function formatExpiry(inp) {
+  let v = inp.value.replace(/\D/g,'').substring(0,4);
+  if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+  inp.value = v;
+}
+
+// ── PROCESS PAYMENT ──
+function processPayment() {
+  const card = document.getElementById('pay_card').value.replace(/\s/g,'');
+  const exp  = document.getElementById('pay_exp').value;
+  const cvv  = document.getElementById('pay_cvv').value;
+  const name = document.getElementById('pay_name').value.trim();
+  if (!card || card.length < 16) { showErr('pay_err','Please enter a valid 16-digit card number.'); return; }
+  if (!exp || exp.length < 5)    { showErr('pay_err','Please enter a valid expiry date (MM/YY).'); return; }
+  if (!cvv || cvv.length < 3)    { showErr('pay_err','Please enter your CVV.'); return; }
+  if (!name)                      { showErr('pay_err','Please enter the name on the card.'); return; }
+
+  const btn = document.getElementById('payBtn');
+  const txt = document.getElementById('payBtnText');
+  btn.disabled = true;
+  txt.textContent = 'Processing...';
+
+  // Simulate payment processing (replace with real Stripe integration)
+  setTimeout(() => {
+    const fn = document.getElementById('su_fn').value.trim();
+    const ln = document.getElementById('su_ln').value.trim();
+    const em = document.getElementById('su_em').value.trim().toLowerCase();
+    const pw = document.getElementById('su_pw').value;
+    const user = {
+      fn, ln, nm: fn + (ln ? ' '+ln : ''),
+      em, pw,
+      plan: selectedPlan,
+      planActivated: new Date().toISOString(),
+      created: new Date().toISOString()
+    };
+    const users = getUsers();
+    users.push(user); saveUsers(users);
+    localStorage.setItem('st_session', JSON.stringify(user));
+    btn.disabled = false;
+    enterApp(fn, false);
+  }, 2000);
+}
+
+// ── LOGIN ──
+function doLogin() {
+  const em = document.getElementById('li_em').value.trim().toLowerCase();
+  const pw = document.getElementById('li_pw').value;
+  if (!em || !pw) { showErr('li_err','Please fill in all fields.'); return; }
+  if (!isAllowed(em)) { showErr('li_err','Access denied. Contact the admin to get access.'); return; }
+  const user = getUsers().find(u => u.em === em && u.pw === pw);
+  if (!user) { showErr('li_err','Incorrect email or password.'); return; }
   localStorage.setItem('st_session', JSON.stringify(user));
-  enterApp(fn, false);
+  enterApp(user.fn || 'Trader', false);
 }
 
 function doGuest() {
@@ -854,58 +1120,143 @@ function enterApp(name, isGuest) {
   setTimeout(() => { window.location.href = 'trading-journal.html'; }, 1400);
 }
 
-/* ── ADMIN PANEL ── */
+// ══════════════════════════════════════════
+// FORGOT PASSWORD
+// ══════════════════════════════════════════
+let resetCode = '';
+let resetEmail = '';
+
+function openForgot() {
+  showStep('fForgot');
+  document.getElementById('tLogin').classList.remove('on');
+  document.getElementById('tSignup').classList.remove('on');
+  document.getElementById('fp_err').style.display = 'none';
+  document.getElementById('fp_success').style.display = 'none';
+}
+function backToLogin() { switchTab('login'); }
+
+async function sendResetCode() {
+  const em = document.getElementById('fp_em').value.trim().toLowerCase();
+  if (!em || !/\S+@\S+\.\S+/.test(em)) { showErr('fp_err','Please enter a valid email address.'); return; }
+  const users = getUsers();
+  const user = users.find(u => u.em === em);
+  if (!user) { showErr('fp_err','No account found with this email address.'); return; }
+
+  // Generate 6-digit code
+  resetCode  = Math.floor(100000 + Math.random() * 900000).toString();
+  resetEmail = em;
+  localStorage.setItem('st_reset', JSON.stringify({ code: resetCode, em: resetEmail, exp: Date.now() + 10*60*1000 }));
+
+  // Send via EmailJS
+  const btn = document.querySelector('#fForgot .auth-submit');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    await emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
+      to_email: em,
+      name: user.fn || 'Trader',
+      code: resetCode
+    });
+    const succ = document.getElementById('fp_success');
+    succ.textContent = `✓ Code sent to ${em}. Check your inbox (and spam folder).`;
+    succ.style.display = 'block';
+    document.getElementById('fp_err').style.display = 'none';
+    setTimeout(() => {
+      showStep('fReset');
+      document.getElementById('reset_subtitle').textContent = `Code sent to ${em}`;
+    }, 1500);
+  } catch(err) {
+    // EmailJS not configured — show code in alert for testing
+    if (EJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+      showErr('fp_err', `EmailJS not configured yet. For testing: your code is ${resetCode}`);
+      setTimeout(() => {
+        showStep('fReset');
+        document.getElementById('reset_subtitle').textContent = `Code sent to ${em}`;
+      }, 2000);
+    } else {
+      showErr('fp_err', 'Failed to send email. Please try again.');
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send reset code →';
+}
+
+function confirmReset() {
+  const code  = document.getElementById('fp_code').value.trim();
+  const newpw = document.getElementById('fp_newpw').value;
+  const stored = (() => { try { return JSON.parse(localStorage.getItem('st_reset')); } catch { return null; } })();
+  if (!stored || Date.now() > stored.exp) { showErr('reset_err','Code expired. Please request a new one.'); return; }
+  if (code !== stored.code) { showErr('reset_err','Incorrect code. Please check your email.'); return; }
+  if (newpw.length < 8)    { showErr('reset_err','Password must be at least 8 characters.'); return; }
+  const users = getUsers();
+  const idx = users.findIndex(u => u.em === stored.em);
+  if (idx === -1) { showErr('reset_err','Account not found.'); return; }
+  users[idx].pw = newpw;
+  saveUsers(users);
+  localStorage.removeItem('st_reset');
+  switchTab('login');
+  setTimeout(() => {
+    const succ = document.createElement('div');
+    succ.style.cssText = 'font-size:12px;color:#22c55e;padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;text-align:center';
+    succ.textContent = '✓ Password reset successful. Please log in.';
+    document.getElementById('fLogin').insertBefore(succ, document.getElementById('li_err'));
+    setTimeout(() => succ.remove(), 4000);
+  }, 100);
+}
+
+// ══════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════
 function openAdmin() {
   const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
-  if (!session || session.em !== ADMIN_EMAIL) return;
-
-  const allowed = getAllowedEmails();
+  if (!session || !isAdmin(session.em)) return;
+  const allowed = getAllowedEmails().filter(e => !ADMIN_EMAILS.includes(e));
   const users = getUsers();
 
   const panel = document.createElement('div');
   panel.id = 'adminPanel';
   panel.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px';
   panel.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:500px;max-width:100%;max-height:85vh;overflow-y:auto;padding:32px;font-family:'Inter',sans-serif">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:520px;max-width:100%;max-height:88vh;overflow-y:auto;font-family:'Inter',sans-serif">
+      <div style="padding:28px 28px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-size:18px;font-weight:700;color:var(--text)">Access Control</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">Manage who can use Shadow Tracker</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text)">⚙️ Access Control</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">Manage who can access Shadow Tracker</div>
         </div>
         <button onclick="document.getElementById('adminPanel').remove()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-family:'Inter',sans-serif;color:var(--text2);font-size:13px">Close</button>
       </div>
-
-      <div style="margin-bottom:20px">
-        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:8px">Add email to approved list</label>
-        <div style="display:flex;gap:8px">
+      <div style="padding:24px 28px">
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Add approved email</div>
+        <div style="display:flex;gap:8px;margin-bottom:20px">
           <input id="adminEmailInput" type="email" placeholder="user@example.com"
-            style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:10px 14px;border-radius:8px;outline:none"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font:400 13px 'Inter',sans-serif;padding:10px 14px;border-radius:8px;outline:none"
             onkeydown="if(event.key==='Enter')adminAddEmail()">
           <button onclick="adminAddEmail()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 18px;font:600 13px 'Inter',sans-serif;cursor:pointer">Add</button>
         </div>
-        <div id="adminMsg" style="font-size:12px;margin-top:6px;display:none"></div>
-      </div>
+        <div id="adminMsg" style="font-size:12px;margin-bottom:12px;display:none"></div>
 
-      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">
-        Approved users <span style="color:var(--text2);font-weight:400">(${allowed.length} email${allowed.length !== 1 ? 's' : ''})</span>
-      </div>
-      <div id="adminList" style="display:flex;flex-direction:column;gap:6px;min-height:40px">
-        ${allowed.length === 0 ? `<div style="font-size:12px;color:var(--text2);padding:12px;background:var(--bg3);border-radius:8px;text-align:center">No approved emails yet. Only admin can access.</div>` :
-          allowed.map(e => `
-            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
-              <div>
-                <div style="font-size:13px;color:var(--text)">${e}</div>
-                ${users.find(u=>u.em===e) ? `<div style="font-size:11px;color:var(--accent);margin-top:1px">✓ Has account</div>` : `<div style="font-size:11px;color:var(--text2);margin-top:1px">No account yet</div>`}
-              </div>
-              <button onclick="adminRemoveEmail('${e}')" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font:500 11px 'Inter',sans-serif;cursor:pointer">Remove</button>
-            </div>
-          `).join('')}
-      </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">
+          Approved users <span style="color:var(--text2);font-weight:400">(${allowed.length})</span>
+        </div>
+        <div id="adminList" style="display:flex;flex-direction:column;gap:6px">
+          ${allowed.length === 0
+            ? `<div style="font-size:12px;color:var(--text2);padding:14px;background:var(--bg3);border-radius:8px;text-align:center">No users added yet.</div>`
+            : allowed.map(e => {
+                const u = users.find(x => x.em === e);
+                return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+                  <div>
+                    <div style="font-size:13px;color:var(--text)">${e}</div>
+                    <div style="font-size:11px;margin-top:2px;color:${u ? 'var(--accent)' : 'var(--text2)'}">${u ? `✓ Account created · ${u.plan||'no plan'} plan` : 'Approved · no account yet'}</div>
+                  </div>
+                  <button onclick="adminRemoveEmail('${e}')" style="background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;padding:5px 10px;font:500 11px 'Inter',sans-serif;cursor:pointer">Remove</button>
+                </div>`;
+              }).join('')}
+        </div>
 
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-        <div style="font-size:11px;color:var(--text2);line-height:1.6">
-          ⚙️ To change admin email, edit <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">ADMIN_EMAIL</code> in index.html<br>
-          People on the list can register and log in. Removing them blocks future logins.
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Admins (full access)</div>
+          ${ADMIN_EMAILS.map(e => `<div style="font-size:12px;color:var(--text2);padding:6px 0;display:flex;align-items:center;gap:6px"><span style="color:var(--accent)">★</span>${e}</div>`).join('')}
         </div>
       </div>
     </div>`;
@@ -918,19 +1269,16 @@ function adminAddEmail() {
   const msg = document.getElementById('adminMsg');
   const em = inp.value.trim().toLowerCase();
   if (!em || !/\S+@\S+\.\S+/.test(em)) {
-    msg.style.cssText = 'font-size:12px;color:#ef4444;display:block';
-    msg.textContent = 'Please enter a valid email.'; return;
+    msg.style.cssText = 'font-size:12px;color:#ef4444;display:block'; msg.textContent = 'Enter a valid email.'; return;
   }
   const list = getAllowedEmails();
   if (list.includes(em)) {
-    msg.style.cssText = 'font-size:12px;color:#f97316;display:block';
-    msg.textContent = 'This email is already approved.'; return;
+    msg.style.cssText = 'font-size:12px;color:#f97316;display:block'; msg.textContent = 'Already approved.'; return;
   }
   list.push(em); saveAllowedEmails(list);
   inp.value = '';
-  msg.style.cssText = 'font-size:12px;color:#22c55e;display:block';
-  msg.textContent = `✓ ${em} added to approved list.`;
-  setTimeout(() => { document.getElementById('adminPanel')?.remove(); openAdmin(); }, 800);
+  msg.style.cssText = 'font-size:12px;color:#22c55e;display:block'; msg.textContent = `✓ ${em} approved.`;
+  setTimeout(() => { document.getElementById('adminPanel')?.remove(); openAdmin(); }, 700);
 }
 
 function adminRemoveEmail(em) {
@@ -940,13 +1288,13 @@ function adminRemoveEmail(em) {
   openAdmin();
 }
 
-// Show admin button if admin is logged in
+// Show admin button if logged in as admin
 window.addEventListener('load', () => {
   const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
-  if (session?.em === ADMIN_EMAIL) {
+  if (session && isAdmin(session.em)) {
     const btn = document.createElement('button');
     btn.textContent = '⚙️ Manage Access';
-    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:600 13px Inter,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.3)';
+    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:600 13px Inter,sans-serif;cursor:pointer';
     btn.onclick = openAdmin;
     document.body.appendChild(btn);
   }
