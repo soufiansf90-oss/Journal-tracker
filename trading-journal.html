@@ -1015,7 +1015,7 @@ body {
 <body>
 <!-- GUEST DEMO BANNER -->
 <div id="guestBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#f97316;color:#fff;text-align:center;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;align-items:center;justify-content:center;gap:16px">
-  <span>👀 You're viewing a demo — all data is simulated. <a href="shadow-tracker-landing.html" style="color:#fff;text-decoration:underline;margin-left:4px">Create a free account →</a></span>
+  <span>👀 You're viewing a demo — all data is simulated. <a href="index.html" style="color:#fff;text-decoration:underline;margin-left:4px">Create a free account →</a></span>
 </div>
 <div id="app">
 <!-- SIDEBAR -->
@@ -1985,7 +1985,7 @@ function saveDB() {
 function logoutUser() {
   if (confirm('Log out of Shadow Tracker?')) {
     localStorage.removeItem('st_session');
-    window.location.href = 'shadow-tracker-landing.html';
+    window.location.href = 'index.html';
   }
 }
 
@@ -3885,7 +3885,7 @@ function guestBlock() {
     <div style="font-size:36px;margin-bottom:16px">🔒</div>
     <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text-primary)">Demo Mode</div>
     <div style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;line-height:1.6">You're viewing a preview with sample data.<br>Create a free account to start tracking your real trades.</div>
-    <a href="shadow-tracker-landing.html" style="display:inline-block;background:var(--accent);color:#fff;padding:12px 28px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none">Create Free Account →</a>
+    <a href="index.html" style="display:inline-block;background:var(--accent);color:#fff;padding:12px 28px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none">Create Free Account →</a>
     <button onclick="this.closest('div').parentElement.remove()" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--text-secondary);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif">Continue viewing demo</button>
   </div>`;
   document.body.appendChild(banner);
