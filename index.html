@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS Trading Journal</title>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>SHADOW Trading Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root {
@@ -32,9 +32,9 @@
   --text-dim: #3e4a60;
   --border: rgba(240,192,64,0.08);
   --border-bright: rgba(240,192,64,0.25);
-  --font-display: 'Chakra Petch', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-  --font-body: 'Inter Tight', sans-serif;
+  --font-display: 'JetBrains Mono', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'JetBrains Mono', monospace;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -574,7 +574,7 @@ body::before {
 .cal-day.today { border-color: var(--neon-dim); }
 .cal-day-num { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
 .cal-pnl { font-family: var(--font-display); font-size: 11px; font-weight: 700; }
-.cal-trades { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+.cal-trades { font-family: var(--font-mono); font-size: 9px; color: #ffffff; margin-top: 2px; }
 
 /* ── ANALYTICS ── */
 .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -1024,6 +1024,34 @@ body::before {
 
   <!-- ═══ DASHBOARD PAGE ═══ -->
   <div class="page active" id="page-dashboard">
+    <!-- Equity Bar — auto from trades -->
+    <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(240,192,64,0.07),rgba(240,192,64,0.02));border-color:rgba(240,192,64,0.2)">
+      <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">EQUITY</div>
+          <div id="equityDisplay" style="font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--neon-primary);text-shadow:0 0 18px rgba(240,192,64,0.4);transition:color .3s">—</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px">Balance + Today P&L</div>
+        </div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">BALANCE</div>
+            <div id="equityBalance" style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-secondary)">—</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">TODAY P&L</div>
+            <div id="equityTodayPnl" style="font-family:var(--font-display);font-size:20px;font-weight:700">—</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">TOTAL P&L</div>
+            <div id="equityTotalPnl" style="font-family:var(--font-display);font-size:20px;font-weight:700">—</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">GAIN</div>
+            <div id="equityGainPct" style="font-family:var(--font-display);font-size:20px;font-weight:700">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="metrics-grid" id="metricsGrid"></div>
     <div class="charts-grid">
       <div class="chart-card full">
@@ -1666,7 +1694,7 @@ body::before {
         </div>
         <div class="form-group">
           <label class="form-label">Result</label>
-          <select class="form-select" id="t_result">
+          <select class="form-select" id="t_result" onchange="autoSetPnlSign(this.value)">
             <option value="win">WIN</option>
             <option value="loss">LOSS</option>
             <option value="be">BREAK-EVEN</option>
@@ -2049,7 +2077,7 @@ function openTradeModal(tradeId = null) {
   selectedEmotions = [];
   selectedSetup = null;
   currentRuleStates = {};
-  pnlSign = 1; resetPnlSign(1);
+  pnlSign = 1; resetPnlSign(1); autoSetPnlSign('win');
   document.getElementById('tradeModalTitle').textContent = tradeId ? 'EDIT TRADE' : 'LOG NEW TRADE';
   populateStrategySelect();
   setTimeout(() => renderTradeRulesChecklist(), 20);
@@ -2345,17 +2373,21 @@ function renderMetrics(stats) {
       <div class="metric-bg-icon">${c.icon}</div>
     </div>
   `).join('');
+  updateEquityDisplay();
 }
 
 function renderEquityChart(trades) {
   const labels = [], data = [];
-  let running = 0;
+  const startCapital = getCurrentAccount().size || 0;
+  let running = startCapital;
+  labels.push('START');
+  data.push(startCapital);
   trades.forEach((t, i) => {
     running += (t.pnl || 0);
     labels.push(t.date ? t.date.slice(0,10) : i);
     data.push(parseFloat(running.toFixed(2)));
   });
-  if (labels.length === 0) { labels.push('Start'); data.push(0); }
+  if (labels.length === 1) { labels.push('—'); data.push(startCapital); }
   destroyChart('equityChart');
   const ctx = document.getElementById('equityChart').getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 0, 280);
@@ -2387,7 +2419,9 @@ function renderDailyChart(trades) {
 
 function renderDrawdownChart(trades) {
   const labels = [], data = [];
-  let peak = 0, running = 0;
+  const startCapital = getCurrentAccount().size || 0;
+  let peak = startCapital, running = startCapital;
+  labels.push('START'); data.push(0);
   trades.forEach((t, i) => {
     running += (t.pnl || 0);
     if (running > peak) peak = running;
@@ -2456,8 +2490,8 @@ function chartOptions(unit) {
         borderWidth: 1,
         titleColor: '#8891a8',
         bodyColor: '#f0c040',
-        titleFont: { family: 'IBM Plex Mono' },
-        bodyFont: { family: 'IBM Plex Mono' },
+        titleFont: { family: 'JetBrains Mono' },
+        bodyFont: { family: 'JetBrains Mono' },
         callbacks: { label: ctx => (unit === '$' ? '$' : '') + ctx.raw + (unit === '%' ? '%' : '') }
       }
     },
@@ -2492,7 +2526,7 @@ function renderSetupQualityChart(trades) {
     data: { labels, datasets: [
       { label: 'Trades', data, backgroundColor: colors, borderColor: borders, borderWidth: 1, borderRadius: 4 }
     ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(240,192,64,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#f0c040', titleFont:{family:'IBM Plex Mono',size:9}, bodyFont:{family:'IBM Plex Mono',size:9} } }, scales:{ x:{grid:{color:'rgba(240,192,64,0.05)'},ticks:{color:'#3e4a60',font:{family:'IBM Plex Mono',size:10}}}, y:{grid:{color:'rgba(240,192,64,0.05)'},ticks:{color:'#3e4a60',font:{family:'IBM Plex Mono',size:9}}} } }
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(240,192,64,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#f0c040', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9} } }, scales:{ x:{grid:{color:'rgba(240,192,64,0.05)'},ticks:{color:'#3e4a60',font:{family:'JetBrains Mono',size:10}}}, y:{grid:{color:'rgba(240,192,64,0.05)'},ticks:{color:'#3e4a60',font:{family:'JetBrains Mono',size:9}}} } }
   });
 }
 
@@ -2513,7 +2547,7 @@ function renderRiskComplianceChart(trades) {
     data: { labels: ['Respected ✓', 'Partial ⚡', 'Violated ✗', total === 0 ? 'No data' : null].filter(Boolean),
       datasets:[{ data: total === 0 ? [1] : [ok, partial, no], backgroundColor: total === 0 ? ['rgba(62,74,96,0.3)'] : ['rgba(57,224,122,0.75)','rgba(240,192,64,0.75)','rgba(240,79,106,0.75)'], borderColor: total === 0 ? ['#3e4a60'] : ['#39e07a','#f0c040','#f04f6a'], borderWidth: 2 }]
     },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display: total > 0, position:'bottom', labels:{color:'#8891a8',font:{family:'IBM Plex Mono',size:9},padding:8,boxWidth:10} }, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(240,192,64,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#f0c040', titleFont:{family:'IBM Plex Mono',size:9}, bodyFont:{family:'IBM Plex Mono',size:9} } } }
+    options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display: total > 0, position:'bottom', labels:{color:'#8891a8',font:{family:'JetBrains Mono',size:9},padding:8,boxWidth:10} }, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(240,192,64,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#f0c040', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9} } } }
   });
 }
 
@@ -2777,7 +2811,7 @@ function renderMonthly() {
   charts.monthPieChart = new Chart(ctx2, {
     type: 'doughnut',
     data: { labels: ['Wins','Losses','BE'], datasets: [{ data: [stats.wins, stats.losses, stats.bes], backgroundColor: ['rgba(57,224,122,0.75)','rgba(240,79,106,0.75)','rgba(240,192,64,0.75)'], borderColor: ['#39e07a','#f04f6a','#f0c040'], borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8891a8', font: { family: 'IBM Plex Mono', size: 11 } } }, tooltip: { backgroundColor: '#161b27', borderColor: 'rgba(240,192,64,0.3)', borderWidth: 1, titleColor: '#8891a8', bodyColor: '#e8eaf2', titleFont: { family: 'IBM Plex Mono' }, bodyFont: { family: 'IBM Plex Mono' } } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8891a8', font: { family: 'JetBrains Mono', size: 11 } } }, tooltip: { backgroundColor: '#161b27', borderColor: 'rgba(240,192,64,0.3)', borderWidth: 1, titleColor: '#8891a8', bodyColor: '#e8eaf2', titleFont: { family: 'JetBrains Mono' }, bodyFont: { family: 'JetBrains Mono' } } } }
   });
   // Trade list
   document.getElementById('monthTradeBody').innerHTML = trades.slice().reverse().map(t => `
@@ -2978,8 +3012,9 @@ function renderStreaks() {
   }).join('');
   // Equity chart for streaks
   destroyChart('streakEquityChart');
-  let running = 0;
-  const labels = [], data = [];
+  const startCapital = getCurrentAccount().size || 0;
+  let running = startCapital;
+  const labels = ['START'], data = [startCapital];
   trades.forEach((t, i) => {
     running += (t.pnl||0);
     labels.push(t.asset || i);
@@ -3147,6 +3182,59 @@ function calcRiskPosition() {
 
 
 
+
+// ══════════════════════════════════════════
+// EQUITY CALCULATOR
+// ══════════════════════════════════════════
+function updateEquityDisplay() {
+  const acc      = getCurrentAccount();
+  const trades   = getTrades();
+  const capital  = acc.size || 0;
+
+  // Today's P&L
+  const todayStr = new Date().toISOString().slice(0,10);
+  const todayPnl = trades
+    .filter(t => t.date && t.date.startsWith(todayStr))
+    .reduce((s, t) => s + (t.pnl || 0), 0);
+
+  // Total closed P&L (all trades)
+  const totalPnl = trades.reduce((s, t) => s + (t.pnl || 0), 0);
+
+  // Balance = starting capital + all closed P&L
+  const balance  = capital + totalPnl;
+
+  // Equity = Balance + Today's floating (today's P&L acts as the day's floating)
+  const equity   = balance;
+
+  const gainPct  = capital > 0 ? ((totalPnl / capital) * 100) : 0;
+
+  const set = (id, val, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    if (color) el.style.color = color;
+  };
+
+  const todayColor = todayPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const totalColor = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const gainColor  = gainPct  >= 0 ? 'var(--green)' : 'var(--red)';
+  const eqColor    = equity >= capital ? 'var(--green)' : 'var(--red)';
+
+  set('equityBalance',  formatCurrency(capital));
+  set('equityTodayPnl', (todayPnl >= 0 ? '+' : '') + formatCurrency(todayPnl), todayColor);
+  set('equityTotalPnl', (totalPnl >= 0 ? '+' : '') + formatCurrency(totalPnl), totalColor);
+  set('equityGainPct',  (gainPct  >= 0 ? '+' : '') + gainPct.toFixed(2) + '%', gainColor);
+
+  const eqEl = document.getElementById('equityDisplay');
+  if (eqEl) {
+    eqEl.textContent   = formatCurrency(equity);
+    eqEl.style.color   = eqColor;
+    eqEl.style.textShadow = equity >= capital
+      ? '0 0 18px rgba(57,224,122,0.45)'
+      : '0 0 18px rgba(240,79,106,0.45)';
+  }
+}
+
 // ══════════════════════════════════════════
 // TRADING RULES SYSTEM
 // ══════════════════════════════════════════
@@ -3263,6 +3351,11 @@ function updateRulesScore() {
 
 // P&L sign toggle
 let pnlSign = 1;
+function autoSetPnlSign(result) {
+  if (result === 'win')  { pnlSign =  1; resetPnlSign(1);  }
+  if (result === 'loss') { pnlSign = -1; resetPnlSign(-1); }
+  if (result === 'be')   { pnlSign =  1; resetPnlSign(1);  }
+}
 function togglePnlSign() {
   pnlSign = pnlSign === 1 ? -1 : 1;
   const btn = document.getElementById('pnlSignBtn');
