@@ -789,30 +789,48 @@ function checkStrength(val) {
   fill.style.background = val.length ? colors[score - 1] || '#ef4444' : 'transparent';
 }
 
+/* ── ACCESS CONTROL ── */
+// ADMIN: set your email here — only you can manage the whitelist
+const ADMIN_EMAIL = 'admin@shadowtracker.com'; // ← change this to your email
+
+function getAllowedEmails() {
+  try { return JSON.parse(localStorage.getItem('st_allowed') || '[]'); } catch { return []; }
+}
+function saveAllowedEmails(list) { localStorage.setItem('st_allowed', JSON.stringify(list)); }
+function isAllowed(em) {
+  const list = getAllowedEmails();
+  // Admin always allowed, empty list = admin-only mode
+  return em === ADMIN_EMAIL || list.includes(em.toLowerCase());
+}
+
 /* ── USERS ── */
 function getUsers() { try { return JSON.parse(localStorage.getItem('st_users') || '[]'); } catch { return []; } }
 function saveUsers(u) { localStorage.setItem('st_users', JSON.stringify(u)); }
 
 function doLogin() {
-  const em = document.getElementById('li_em').value.trim();
+  const em = document.getElementById('li_em').value.trim().toLowerCase();
   const pw = document.getElementById('li_pw').value;
   if (!em || !pw) { showErr('li_err', 'Please fill in all fields.'); return; }
+  if (!isAllowed(em)) { showErr('li_err', 'Access denied. This account is not on the approved list.'); return; }
   const user = getUsers().find(u => u.em === em && u.pw === pw);
   if (!user) { showErr('li_err', 'Incorrect email or password.'); return; }
   localStorage.setItem('st_session', JSON.stringify(user));
+  // Open admin panel if admin
+  if (em === ADMIN_EMAIL) { enterApp(user.fn || 'Admin', false); return; }
   enterApp(user.fn || 'Trader', false);
 }
 
 function doSignup() {
   const fn = document.getElementById('su_fn').value.trim();
   const ln = document.getElementById('su_ln').value.trim();
-  const em = document.getElementById('su_em').value.trim();
+  const em = document.getElementById('su_em').value.trim().toLowerCase();
   const pw = document.getElementById('su_pw').value;
   const terms = document.getElementById('su_terms').checked;
   if (!fn || !em || !pw) { showErr('su_err', 'Please fill in all required fields.'); return; }
   if (!/\S+@\S+\.\S+/.test(em)) { showErr('su_err', 'Please enter a valid email address.'); return; }
   if (pw.length < 8) { showErr('su_err', 'Password must be at least 8 characters.'); return; }
   if (!terms) { showErr('su_err', 'Please accept the Terms of Service to continue.'); return; }
+  if (!isAllowed(em)) { showErr('su_err', 'This email is not on the approved access list. Contact the admin.'); return; }
   const users = getUsers();
   if (users.find(u => u.em === em)) { showErr('su_err', 'An account with this email already exists.'); return; }
   const user = { fn, ln, nm: fn + (ln ? ' ' + ln : ''), em, pw, created: new Date().toISOString() };
@@ -829,12 +847,110 @@ function doGuest() {
 function enterApp(name, isGuest) {
   closeAuth();
   const ld = document.getElementById('loading');
-  document.getElementById('ld-msg').textContent = isGuest ? 'Loading demo preview...' : `Welcome back, ${name}`;
+  document.getElementById('ld-msg').textContent = isGuest ? 'Loading demo preview...' : `Welcome, ${name}`;
   ld.style.display = 'flex';
   document.body.style.overflow = 'hidden';
   setTimeout(() => { document.getElementById('ld-fill').style.width = '100%'; }, 50);
   setTimeout(() => { window.location.href = 'trading-journal.html'; }, 1400);
 }
+
+/* ── ADMIN PANEL ── */
+function openAdmin() {
+  const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
+  if (!session || session.em !== ADMIN_EMAIL) return;
+
+  const allowed = getAllowedEmails();
+  const users = getUsers();
+
+  const panel = document.createElement('div');
+  panel.id = 'adminPanel';
+  panel.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px';
+  panel.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:500px;max-width:100%;max-height:85vh;overflow-y:auto;padding:32px;font-family:'Inter',sans-serif">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--text)">Access Control</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Manage who can use Shadow Tracker</div>
+        </div>
+        <button onclick="document.getElementById('adminPanel').remove()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-family:'Inter',sans-serif;color:var(--text2);font-size:13px">Close</button>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:8px">Add email to approved list</label>
+        <div style="display:flex;gap:8px">
+          <input id="adminEmailInput" type="email" placeholder="user@example.com"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:10px 14px;border-radius:8px;outline:none"
+            onkeydown="if(event.key==='Enter')adminAddEmail()">
+          <button onclick="adminAddEmail()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 18px;font:600 13px 'Inter',sans-serif;cursor:pointer">Add</button>
+        </div>
+        <div id="adminMsg" style="font-size:12px;margin-top:6px;display:none"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">
+        Approved users <span style="color:var(--text2);font-weight:400">(${allowed.length} email${allowed.length !== 1 ? 's' : ''})</span>
+      </div>
+      <div id="adminList" style="display:flex;flex-direction:column;gap:6px;min-height:40px">
+        ${allowed.length === 0 ? `<div style="font-size:12px;color:var(--text2);padding:12px;background:var(--bg3);border-radius:8px;text-align:center">No approved emails yet. Only admin can access.</div>` :
+          allowed.map(e => `
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+              <div>
+                <div style="font-size:13px;color:var(--text)">${e}</div>
+                ${users.find(u=>u.em===e) ? `<div style="font-size:11px;color:var(--accent);margin-top:1px">✓ Has account</div>` : `<div style="font-size:11px;color:var(--text2);margin-top:1px">No account yet</div>`}
+              </div>
+              <button onclick="adminRemoveEmail('${e}')" style="background:none;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font:500 11px 'Inter',sans-serif;cursor:pointer">Remove</button>
+            </div>
+          `).join('')}
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text2);line-height:1.6">
+          ⚙️ To change admin email, edit <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">ADMIN_EMAIL</code> in index.html<br>
+          People on the list can register and log in. Removing them blocks future logins.
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(panel);
+  panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+}
+
+function adminAddEmail() {
+  const inp = document.getElementById('adminEmailInput');
+  const msg = document.getElementById('adminMsg');
+  const em = inp.value.trim().toLowerCase();
+  if (!em || !/\S+@\S+\.\S+/.test(em)) {
+    msg.style.cssText = 'font-size:12px;color:#ef4444;display:block';
+    msg.textContent = 'Please enter a valid email.'; return;
+  }
+  const list = getAllowedEmails();
+  if (list.includes(em)) {
+    msg.style.cssText = 'font-size:12px;color:#f97316;display:block';
+    msg.textContent = 'This email is already approved.'; return;
+  }
+  list.push(em); saveAllowedEmails(list);
+  inp.value = '';
+  msg.style.cssText = 'font-size:12px;color:#22c55e;display:block';
+  msg.textContent = `✓ ${em} added to approved list.`;
+  setTimeout(() => { document.getElementById('adminPanel')?.remove(); openAdmin(); }, 800);
+}
+
+function adminRemoveEmail(em) {
+  const list = getAllowedEmails().filter(e => e !== em);
+  saveAllowedEmails(list);
+  document.getElementById('adminPanel')?.remove();
+  openAdmin();
+}
+
+// Show admin button if admin is logged in
+window.addEventListener('load', () => {
+  const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
+  if (session?.em === ADMIN_EMAIL) {
+    const btn = document.createElement('button');
+    btn.textContent = '⚙️ Manage Access';
+    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:600 13px Inter,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.3)';
+    btn.onclick = openAdmin;
+    document.body.appendChild(btn);
+  }
+});
 </script>
 </body>
 </html>
