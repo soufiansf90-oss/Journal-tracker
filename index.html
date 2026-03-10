@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHADOW Trading Journal</title>
+<title>NEXUS Trading Journal</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -13,25 +13,25 @@
   --bg-panel: #121620;
   --bg-card: #161b27;
   --bg-elevated: #1c2233;
-  --neon-primary: #f0c040;
-  --neon-bright: #f5d470;
-  --neon-dim: #b8902a;
-  --neon-glow: rgba(240,192,64,0.10);
-  --neon-glow-strong: rgba(240,192,64,0.28);
+  --neon-primary: #00b4d8;
+  --neon-bright: #90e0ef;
+  --neon-dim: #0077b6;
+  --neon-glow: rgba(0,180,216,0.10);
+  --neon-glow-strong: rgba(0,180,216,0.28);
   --green: #39e07a;
   --green-dim: #22b559;
   --red: #f04f6a;
   --red-dim: #c03050;
-  --yellow: #f0c040;
-  --yellow-dim: #b8902a;
+  --yellow: #00b4d8;
+  --yellow-dim: #0077b6;
   --purple: #a87cde;
   --orange: #f07840;
   --cyan: #38d9d9;
   --text-primary: #e8eaf2;
   --text-secondary: #8891a8;
   --text-dim: #3e4a60;
-  --border: rgba(240,192,64,0.08);
-  --border-bright: rgba(240,192,64,0.25);
+  --border: rgba(0,180,216,0.08);
+  --border-bright: rgba(0,180,216,0.25);
   --font-display: 'JetBrains Mono', monospace;
   --font-mono: 'JetBrains Mono', monospace;
   --font-body: 'JetBrains Mono', monospace;
@@ -89,7 +89,7 @@ body::before {
   font-size: 22px;
   font-weight: 800;
   color: var(--neon-primary);
-  text-shadow: 0 0 24px rgba(240,192,64,0.55);
+  text-shadow: 0 0 24px rgba(0,180,216,0.55);
   letter-spacing: 4px;
 }
 .logo-sub {
@@ -334,7 +334,7 @@ body::before {
   font-size: 26px;
   font-weight: 700;
   color: var(--accent, var(--neon-primary));
-  text-shadow: 0 0 14px rgba(240,192,64,0.35);
+  text-shadow: 0 0 14px rgba(0,180,216,0.35);
   line-height: 1;
 }
 .metric-sub {
@@ -393,9 +393,9 @@ body::before {
 .btn-primary {
   background: var(--neon-primary);
   color: var(--bg-void);
-  box-shadow: 0 0 16px rgba(240,192,64,0.3);
+  box-shadow: 0 0 16px rgba(0,180,216,0.3);
 }
-.btn-primary:hover { background: var(--neon-bright); box-shadow: 0 0 26px rgba(240,192,64,0.5); transform: translateY(-1px); }
+.btn-primary:hover { background: var(--neon-bright); box-shadow: 0 0 26px rgba(0,180,216,0.5); transform: translateY(-1px); }
 .btn-outline {
   background: transparent;
   border: 1px solid var(--neon-dim);
@@ -427,7 +427,7 @@ body::before {
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 0 50px rgba(240,192,64,0.08);
+  box-shadow: 0 0 50px rgba(0,180,216,0.08);
   animation: slideUp .3s ease;
 }
 .modal.sm { width: 420px; }
@@ -623,7 +623,7 @@ body::before {
   content: '';
   width: 3px; height: 20px;
   background: var(--neon-primary);
-  box-shadow: 0 0 10px rgba(240,192,64,0.6);
+  box-shadow: 0 0 10px rgba(0,180,216,0.6);
   border-radius: 2px;
 }
 
@@ -676,7 +676,7 @@ body::before {
   color: var(--neon-primary);
   text-align: center;
   padding: 20px;
-  text-shadow: 0 0 14px rgba(240,192,64,0.5);
+  text-shadow: 0 0 14px rgba(0,180,216,0.5);
 }
 
 /* ── TRADE DETAIL ── */
@@ -692,7 +692,7 @@ body::before {
   font-size: 32px;
   font-weight: 800;
   color: var(--neon-bright);
-  text-shadow: 0 0 20px rgba(240,192,64,0.5);
+  text-shadow: 0 0 20px rgba(0,180,216,0.5);
 }
 .detail-levels {
   display: flex;
@@ -760,7 +760,7 @@ body::before {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--neon-primary);
-  box-shadow: 0 0 16px rgba(240,192,64,0.12);
+  box-shadow: 0 0 16px rgba(0,180,216,0.12);
   z-index: 9000;
   animation: slideInRight .3s ease;
   display: flex;
@@ -839,7 +839,7 @@ body::before {
 .emotion-chip:hover { border-color: var(--neon-dim); color: var(--text-primary); }
 .emotion-chip.active-fomo  { background:rgba(168,124,222,0.18); border-color:#a87cde; color:#a87cde; box-shadow:0 0 8px rgba(168,124,222,0.3); }
 .emotion-chip.active-revenge { background:rgba(240,79,106,0.15); border-color:#f04f6a; color:#f04f6a; box-shadow:0 0 8px rgba(240,79,106,0.3); }
-.emotion-chip.active-fear { background:rgba(240,192,64,0.15); border-color:#f0c040; color:#f0c040; box-shadow:0 0 8px rgba(240,192,64,0.3); }
+.emotion-chip.active-fear { background:rgba(0,180,216,0.15); border-color:#00b4d8; color:#00b4d8; box-shadow:0 0 8px rgba(0,180,216,0.3); }
 .emotion-chip.active-greed { background:rgba(240,120,64,0.15); border-color:#f07840; color:#f07840; box-shadow:0 0 8px rgba(240,120,64,0.3); }
 .emotion-chip.active-confidence { background:rgba(57,224,122,0.15); border-color:#39e07a; color:#39e07a; box-shadow:0 0 8px rgba(57,224,122,0.3); }
 .emotion-chip.active-neutral { background:rgba(56,217,217,0.12); border-color:#38d9d9; color:#38d9d9; box-shadow:0 0 6px rgba(56,217,217,0.2); }
@@ -863,7 +863,7 @@ body::before {
 }
 .setup-btn:hover { border-color: var(--neon-dim); color: var(--text-primary); }
 .setup-btn.active-aplus { background:rgba(57,224,122,0.15); border-color:#39e07a; color:#39e07a; box-shadow:0 0 10px rgba(57,224,122,0.35); }
-.setup-btn.active-a { background:rgba(240,192,64,0.13); border-color:#f0c040; color:#f0c040; box-shadow:0 0 10px rgba(240,192,64,0.3); }
+.setup-btn.active-a { background:rgba(0,180,216,0.13); border-color:#00b4d8; color:#00b4d8; box-shadow:0 0 10px rgba(0,180,216,0.3); }
 .setup-btn.active-b { background:rgba(168,124,222,0.13); border-color:#a87cde; color:#a87cde; box-shadow:0 0 8px rgba(168,124,222,0.3); }
 .setup-btn.active-c { background:rgba(240,79,106,0.13); border-color:#f04f6a; color:#f04f6a; box-shadow:0 0 8px rgba(240,79,106,0.3); }
 
@@ -881,7 +881,7 @@ body::before {
 
 /* Badge for setup quality */
 .badge-aplus { background:rgba(57,224,122,0.15); color:#39e07a; border:1px solid rgba(57,224,122,0.35); }
-.badge-a     { background:rgba(240,192,64,0.15); color:#f0c040; border:1px solid rgba(240,192,64,0.35); }
+.badge-a     { background:rgba(0,180,216,0.15); color:#00b4d8; border:1px solid rgba(0,180,216,0.35); }
 .badge-b     { background:rgba(168,124,222,0.15); color:#a87cde; border:1px solid rgba(168,124,222,0.35); }
 .badge-c     { background:rgba(240,79,106,0.15); color:#f04f6a; border:1px solid rgba(240,79,106,0.35); }
 .badge-emotion { background:rgba(56,217,217,0.10); color:#38d9d9; border:1px solid rgba(56,217,217,0.25); }
@@ -972,7 +972,6 @@ body::before {
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-text">SHADOW TRACKER</div>
-    <div class="logo-sub" style="color:var(--neon-primary);opacity:0.7;font-size:11px;letter-spacing:3px;margin-top:3px">EQUITY</div>
     <div class="logo-sub" style="margin-top:2px">TRADING JOURNAL v2.0</div>
   </div>
   <div class="account-section">
@@ -999,6 +998,13 @@ body::before {
     <div class="nav-item" onclick="showPage('lotcalc',this)"><span class="nav-icon">◐</span> Lot Size Calc</div>
   </div>
   <div class="sidebar-bottom">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 10px;background:var(--bg-card);border-radius:5px;border:1px solid var(--border)">
+      <div>
+        <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);margin-bottom:2px">LOGGED IN AS</div>
+        <div id="sidebar-user" style="font-size:11px;font-weight:700;color:var(--neon-primary);letter-spacing:1px">TRADER</div>
+      </div>
+      <button onclick="logoutUser()" title="Logout" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:3px;padding:5px 8px;font-family:var(--font-mono);font-size:9px;cursor:pointer;letter-spacing:1px;transition:all .2s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">OUT</button>
+    </div>
     <div class="account-label" style="margin-bottom:8px">DATA MANAGEMENT</div>
     <div class="data-actions">
       <button class="btn-data" onclick="exportData()">⬇ EXPORT</button>
@@ -1025,11 +1031,11 @@ body::before {
   <!-- ═══ DASHBOARD PAGE ═══ -->
   <div class="page active" id="page-dashboard">
     <!-- Equity Bar — auto from trades -->
-    <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(240,192,64,0.07),rgba(240,192,64,0.02));border-color:rgba(240,192,64,0.2)">
+    <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(0,180,216,0.07),rgba(0,180,216,0.02));border-color:rgba(0,180,216,0.2)">
       <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
         <div style="flex:1;min-width:160px">
           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">EQUITY</div>
-          <div id="equityDisplay" style="font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--neon-primary);text-shadow:0 0 18px rgba(240,192,64,0.4);transition:color .3s">—</div>
+          <div id="equityDisplay" style="font-family:var(--font-display);font-size:36px;font-weight:800;color:var(--neon-primary);text-shadow:0 0 18px rgba(0,180,216,0.4);transition:color .3s">—</div>
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px">Balance + Today P&L</div>
         </div>
         <div style="display:flex;gap:28px;flex-wrap:wrap">
@@ -1083,7 +1089,7 @@ body::before {
         <div class="chart-container" style="position:relative">
           <canvas id="riskComplianceChart"></canvas>
           <div id="riskCompliancePct" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-            <div style="font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 14px rgba(240,192,64,0.5)" id="riskPctVal">—</div>
+            <div style="font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 14px rgba(0,180,216,0.5)" id="riskPctVal">—</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px">RISK OK</div>
           </div>
         </div>
@@ -1424,9 +1430,9 @@ body::before {
 
       <!-- Results -->
       <div style="display:grid;gap:16px">
-        <div class="card" style="background:linear-gradient(135deg,rgba(240,192,64,0.06),rgba(240,192,64,0.02))">
+        <div class="card" style="background:linear-gradient(135deg,rgba(0,180,216,0.06),rgba(0,180,216,0.02))">
           <div class="card-title">RISK AMOUNT</div>
-          <div id="rc_riskdollar" style="font-family:var(--font-display);font-size:36px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 16px rgba(240,192,64,0.5)">$—</div>
+          <div id="rc_riskdollar" style="font-family:var(--font-display);font-size:36px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 16px rgba(0,180,216,0.5)">$—</div>
           <div id="rc_riskpip" style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-top:4px"></div>
         </div>
         <div class="card" style="background:linear-gradient(135deg,rgba(57,224,122,0.06),rgba(57,224,122,0.02))">
@@ -1500,9 +1506,9 @@ body::before {
           </div>
         </div>
         <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(240,192,64,0.07),rgba(240,192,64,0.02))">
+          <div class="card" style="background:linear-gradient(135deg,rgba(0,180,216,0.07),rgba(0,180,216,0.02))">
             <div class="card-title">STANDARD LOT SIZE</div>
-            <div id="lc_fx_std" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 18px rgba(240,192,64,0.5)">—</div>
+            <div id="lc_fx_std" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 18px rgba(0,180,216,0.5)">—</div>
             <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px">1 lot = 100,000 units</div>
           </div>
           <div class="card" style="background:linear-gradient(135deg,rgba(57,224,122,0.07),rgba(57,224,122,0.02))">
@@ -1548,9 +1554,9 @@ body::before {
           </div>
         </div>
         <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(240,192,64,0.08),rgba(240,192,64,0.02))">
+          <div class="card" style="background:linear-gradient(135deg,rgba(0,180,216,0.08),rgba(0,180,216,0.02))">
             <div class="card-title">LOT SIZE</div>
-            <div id="lc_g_lot" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 18px rgba(240,192,64,0.5)">—</div>
+            <div id="lc_g_lot" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 18px rgba(0,180,216,0.5)">—</div>
             <div id="lc_g_units" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
           </div>
           <div class="card" style="background:linear-gradient(135deg,rgba(240,79,106,0.07),rgba(240,79,106,0.02))">
@@ -1631,9 +1637,9 @@ body::before {
           </div>
         </div>
         <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(240,192,64,0.07),rgba(240,192,64,0.02))">
+          <div class="card" style="background:linear-gradient(135deg,rgba(0,180,216,0.07),rgba(0,180,216,0.02))">
             <div class="card-title">POSITION SIZE (COINS)</div>
-            <div id="lc_c_coins" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 18px rgba(240,192,64,0.5)">—</div>
+            <div id="lc_c_coins" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--neon-primary);text-shadow:0 0 18px rgba(0,180,216,0.5)">—</div>
             <div id="lc_c_usd" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
           </div>
           <div class="card" style="background:linear-gradient(135deg,rgba(240,79,106,0.07),rgba(240,79,106,0.02))">
@@ -1918,6 +1924,13 @@ function loadDB() {
 
 function saveDB() {
   localStorage.setItem('nexus_trading_journal', JSON.stringify(db));
+}
+
+function logoutUser() {
+  if (confirm('Log out of Shadow Tracker?')) {
+    localStorage.removeItem('st_session');
+    window.location.href = 'index.html';
+  }
 }
 
 function getTrades() {
@@ -2391,11 +2404,11 @@ function renderEquityChart(trades) {
   destroyChart('equityChart');
   const ctx = document.getElementById('equityChart').getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 0, 280);
-  grad.addColorStop(0, 'rgba(240,192,64,0.25)');
-  grad.addColorStop(1, 'rgba(240,192,64,0)');
+  grad.addColorStop(0, 'rgba(0,180,216,0.25)');
+  grad.addColorStop(1, 'rgba(0,180,216,0)');
   charts.equityChart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ label: 'Equity', data, borderColor: '#f0c040', backgroundColor: grad, borderWidth: 2, tension: 0.4, fill: true, pointRadius: data.length > 50 ? 0 : 3, pointBackgroundColor: '#f0c040', pointHoverRadius: 5 }] },
+    data: { labels, datasets: [{ label: 'Equity', data, borderColor: '#00b4d8', backgroundColor: grad, borderWidth: 2, tension: 0.4, fill: true, pointRadius: data.length > 50 ? 0 : 3, pointBackgroundColor: '#00b4d8', pointHoverRadius: 5 }] },
     options: chartOptions('$')
   });
 }
@@ -2456,7 +2469,7 @@ function renderRRChart(trades) {
   const ctx = document.getElementById('rrChart').getContext('2d');
   charts.rrChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels: labels.map(l => '1:' + l), datasets: [{ label: 'Trades', data, backgroundColor: 'rgba(240,192,64,0.45)', borderColor: '#f0c040', borderWidth: 1, borderRadius: 3 }] },
+    data: { labels: labels.map(l => '1:' + l), datasets: [{ label: 'Trades', data, backgroundColor: 'rgba(0,180,216,0.45)', borderColor: '#00b4d8', borderWidth: 1, borderRadius: 3 }] },
     options: chartOptions('')
   });
 }
@@ -2486,10 +2499,10 @@ function chartOptions(unit) {
       legend: { display: false },
       tooltip: {
         backgroundColor: '#161b27',
-        borderColor: 'rgba(240,192,64,0.3)',
+        borderColor: 'rgba(0,180,216,0.3)',
         borderWidth: 1,
         titleColor: '#8891a8',
-        bodyColor: '#f0c040',
+        bodyColor: '#00b4d8',
         titleFont: { family: 'JetBrains Mono' },
         bodyFont: { family: 'JetBrains Mono' },
         callbacks: { label: ctx => (unit === '$' ? '$' : '') + ctx.raw + (unit === '%' ? '%' : '') }
@@ -2519,14 +2532,14 @@ function renderSetupQualityChart(trades) {
   if (!ctx) return;
   const labels = Object.keys(counts);
   const data = Object.values(counts);
-  const colors = ['rgba(57,224,122,0.7)','rgba(240,192,64,0.7)','rgba(168,124,222,0.7)','rgba(240,79,106,0.7)'];
-  const borders = ['#39e07a','#f0c040','#a87cde','#f04f6a'];
+  const colors = ['rgba(57,224,122,0.7)','rgba(0,180,216,0.7)','rgba(168,124,222,0.7)','rgba(240,79,106,0.7)'];
+  const borders = ['#39e07a','#00b4d8','#a87cde','#f04f6a'];
   charts.setupQualityChart = new Chart(ctx.getContext('2d'), {
     type: 'bar',
     data: { labels, datasets: [
       { label: 'Trades', data, backgroundColor: colors, borderColor: borders, borderWidth: 1, borderRadius: 4 }
     ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(240,192,64,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#f0c040', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9} } }, scales:{ x:{grid:{color:'rgba(240,192,64,0.05)'},ticks:{color:'#3e4a60',font:{family:'JetBrains Mono',size:10}}}, y:{grid:{color:'rgba(240,192,64,0.05)'},ticks:{color:'#3e4a60',font:{family:'JetBrains Mono',size:9}}} } }
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(0,180,216,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#00b4d8', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9} } }, scales:{ x:{grid:{color:'rgba(0,180,216,0.05)'},ticks:{color:'#3e4a60',font:{family:'JetBrains Mono',size:10}}}, y:{grid:{color:'rgba(0,180,216,0.05)'},ticks:{color:'#3e4a60',font:{family:'JetBrains Mono',size:9}}} } }
   });
 }
 
@@ -2545,9 +2558,9 @@ function renderRiskComplianceChart(trades) {
   charts.riskComplianceChart = new Chart(ctx.getContext('2d'), {
     type: 'doughnut',
     data: { labels: ['Respected ✓', 'Partial ⚡', 'Violated ✗', total === 0 ? 'No data' : null].filter(Boolean),
-      datasets:[{ data: total === 0 ? [1] : [ok, partial, no], backgroundColor: total === 0 ? ['rgba(62,74,96,0.3)'] : ['rgba(57,224,122,0.75)','rgba(240,192,64,0.75)','rgba(240,79,106,0.75)'], borderColor: total === 0 ? ['#3e4a60'] : ['#39e07a','#f0c040','#f04f6a'], borderWidth: 2 }]
+      datasets:[{ data: total === 0 ? [1] : [ok, partial, no], backgroundColor: total === 0 ? ['rgba(62,74,96,0.3)'] : ['rgba(57,224,122,0.75)','rgba(0,180,216,0.75)','rgba(240,79,106,0.75)'], borderColor: total === 0 ? ['#3e4a60'] : ['#39e07a','#00b4d8','#f04f6a'], borderWidth: 2 }]
     },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display: total > 0, position:'bottom', labels:{color:'#8891a8',font:{family:'JetBrains Mono',size:9},padding:8,boxWidth:10} }, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(240,192,64,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#f0c040', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9} } } }
+    options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{ display: total > 0, position:'bottom', labels:{color:'#8891a8',font:{family:'JetBrains Mono',size:9},padding:8,boxWidth:10} }, tooltip:{ backgroundColor:'#161b27', borderColor:'rgba(0,180,216,0.3)', borderWidth:1, titleColor:'#8891a8', bodyColor:'#00b4d8', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9} } } }
   });
 }
 
@@ -2810,8 +2823,8 @@ function renderMonthly() {
   const ctx2 = document.getElementById('monthPieChart').getContext('2d');
   charts.monthPieChart = new Chart(ctx2, {
     type: 'doughnut',
-    data: { labels: ['Wins','Losses','BE'], datasets: [{ data: [stats.wins, stats.losses, stats.bes], backgroundColor: ['rgba(57,224,122,0.75)','rgba(240,79,106,0.75)','rgba(240,192,64,0.75)'], borderColor: ['#39e07a','#f04f6a','#f0c040'], borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8891a8', font: { family: 'JetBrains Mono', size: 11 } } }, tooltip: { backgroundColor: '#161b27', borderColor: 'rgba(240,192,64,0.3)', borderWidth: 1, titleColor: '#8891a8', bodyColor: '#e8eaf2', titleFont: { family: 'JetBrains Mono' }, bodyFont: { family: 'JetBrains Mono' } } } }
+    data: { labels: ['Wins','Losses','BE'], datasets: [{ data: [stats.wins, stats.losses, stats.bes], backgroundColor: ['rgba(57,224,122,0.75)','rgba(240,79,106,0.75)','rgba(0,180,216,0.75)'], borderColor: ['#39e07a','#f04f6a','#00b4d8'], borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8891a8', font: { family: 'JetBrains Mono', size: 11 } } }, tooltip: { backgroundColor: '#161b27', borderColor: 'rgba(0,180,216,0.3)', borderWidth: 1, titleColor: '#8891a8', bodyColor: '#e8eaf2', titleFont: { family: 'JetBrains Mono' }, bodyFont: { family: 'JetBrains Mono' } } } }
   });
   // Trade list
   document.getElementById('monthTradeBody').innerHTML = trades.slice().reverse().map(t => `
@@ -3022,11 +3035,11 @@ function renderStreaks() {
   });
   const ctx = document.getElementById('streakEquityChart').getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 0, 280);
-  grad.addColorStop(0, 'rgba(240,192,64,0.22)');
-  grad.addColorStop(1, 'rgba(240,192,64,0)');
+  grad.addColorStop(0, 'rgba(0,180,216,0.22)');
+  grad.addColorStop(1, 'rgba(0,180,216,0)');
   charts.streakEquityChart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data, borderColor: '#f0c040', backgroundColor: grad, borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0, pointHoverRadius: 4 }] },
+    data: { labels, datasets: [{ data, borderColor: '#00b4d8', backgroundColor: grad, borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0, pointHoverRadius: 4 }] },
     options: chartOptions('$')
   });
 }
@@ -3172,7 +3185,7 @@ function calcRiskPosition() {
     const rd = (pct/100)*balance;
     const ls = slInPips > 0 && pipVal > 0 ? rd/(slInPips*pipVal) : 0;
     const active = Math.abs(pct - riskPct) < 0.01;
-    return `<div style="background:${active?'rgba(240,192,64,0.12)':'var(--bg-elevated)'};border:1px solid ${active?'var(--neon-primary)':'var(--border)'};border-radius:6px;padding:12px;text-align:center;cursor:pointer;transition:all .2s" onclick="document.getElementById('rc_riskpct').value=${pct};calcRiskPosition()">
+    return `<div style="background:${active?'rgba(0,180,216,0.12)':'var(--bg-elevated)'};border:1px solid ${active?'var(--neon-primary)':'var(--border)'};border-radius:6px;padding:12px;text-align:center;cursor:pointer;transition:all .2s" onclick="document.getElementById('rc_riskpct').value=${pct};calcRiskPosition()">
       <div style="font-family:var(--font-display);font-size:13px;font-weight:700;color:${active?'var(--neon-primary)':'var(--text-secondary)'}">${pct}%</div>
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-top:4px">$${rd.toFixed(0)}</div>
       <div style="font-family:var(--font-display);font-size:12px;color:${active?'var(--green)':'var(--text-dim)'};margin-top:2px">${ls>0?ls.toFixed(2)+' L':'—'}</div>
@@ -3414,7 +3427,7 @@ function calcLotForex() {
       const rd = (r/100)*bal;
       const ls = slPips > 0 ? rd/(slPips*pipValPerLot) : 0;
       const active = Math.abs(r - riskPct) < 0.01;
-      return `<tr style="${active?'background:rgba(240,192,64,0.07)':''}">
+      return `<tr style="${active?'background:rgba(0,180,216,0.07)':''}">
         <td style="color:${active?'var(--neon-primary)':'inherit'};font-weight:${active?700:400}">${r}%</td>
         <td style="color:var(--red)">$${rd.toFixed(2)}</td>
         <td style="color:var(--neon-primary);font-weight:700">${ls>0?ls.toFixed(2):'—'}</td>
@@ -3698,6 +3711,13 @@ function showNotification(msg, type = '') {
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // ── SESSION GUARD ──
+  const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
+  if (!session) { window.location.href = 'index.html'; return; }
+  // Show user name in sidebar
+  const userEl = document.getElementById('sidebar-user');
+  if (userEl) userEl.textContent = (session.nm || 'TRADER').toUpperCase();
+
   loadDB();
   renderAccountSelect();
   renderDashboard();
