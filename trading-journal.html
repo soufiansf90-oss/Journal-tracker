@@ -4710,6 +4710,40 @@ function importData(e) {
 }
 
 // ══════════════════════════════════════════
+// DAILY CHECK-IN
+// ══════════════════════════════════════════
+let checkinMood = null;
+
+function selectCheckin(type, val, el) {
+  const btns = el.parentElement.querySelectorAll('.checkin-emoji-btn');
+  btns.forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  if (type === 'mood') checkinMood = val;
+}
+
+function saveCheckin() {
+  const today = new Date().toDateString();
+  const entry = {
+    date: today,
+    mood: checkinMood || 'neutral',
+    energy: parseInt(document.getElementById('energySlider').value) || 7,
+    focus: parseInt(document.getElementById('focusSlider').value) || 7,
+    note: document.getElementById('checkinNote').value.trim()
+  };
+  const history = JSON.parse(localStorage.getItem('st_checkins') || '[]');
+  history.push(entry);
+  localStorage.setItem('st_checkins', JSON.stringify(history));
+  localStorage.setItem('st_checkin_date', today);
+  document.getElementById('checkinModal').classList.add('hidden');
+  showNotification('Check-in saved! Have a great session 🚀', 'win');
+}
+
+function skipCheckin() {
+  localStorage.setItem('st_checkin_date', new Date().toDateString());
+  document.getElementById('checkinModal').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════
 function showNotification(msg, type = '') {
