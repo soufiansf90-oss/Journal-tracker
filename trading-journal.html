@@ -2413,6 +2413,8 @@ function getEmptyStats() {
 const pageTitles = { badges:'ACHIEVEMENTS', reportcard:'WEEKLY REPORT CARD', csvimport:'IMPORT TRADES', dashboard:'COMMAND DASHBOARD', riskcalc:'POSITION RISK CALCULATOR', lotcalc:'LOT SIZE CALCULATOR', trades:'TRADE LOG', calendar:'TRADING CALENDAR', monthly:'MONTHLY PERFORMANCE', analytics:'ADVANCED ANALYTICS', behavior:'BEHAVIORAL ANALYSIS', streaks:'STREAK VISUALIZER', coach:'AI TRADING COACH', montecarlo:'MONTE CARLO SIMULATION', risk:'RISK & PROBABILITY', tradedetail:'TRADE DETAIL' };
 
 function showPage(name, navEl) {
+  // Close sidebar on mobile FIRST — before any render that might error
+  if (window.innerWidth <= 900) closeSidebar();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const page = document.getElementById('page-' + name);
   if (page) page.classList.add('active');
@@ -2421,9 +2423,7 @@ function showPage(name, navEl) {
   const title = document.getElementById('topbarTitle');
   if (title) title.textContent = pageTitles[name] || name.toUpperCase();
   const renders = { dashboard: renderDashboard, badges: renderBadges, reportcard: renderReportCard, csvimport: renderCSVImport, trades: renderTrades, calendar: renderCalendar, monthly: renderMonthly, analytics: renderAnalytics, behavior: renderBehavior, streaks: renderStreaks, coach: () => {}, montecarlo: () => {} };
-  if (renders[name]) renders[name]();
-  // Close sidebar on mobile
-  if (window.innerWidth <= 900) closeSidebar();
+  try { if (renders[name]) renders[name](); } catch(e) { console.error('Render error:', e); }
 }
 
 function switchTab(page, tab, btn) {
