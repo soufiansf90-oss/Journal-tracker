@@ -896,7 +896,8 @@ try { emailjs.init(EJS_PUBLIC_KEY); } catch(e) {}
 // ══════════════════════════════════════════
 // ACCESS CONTROL
 // ══════════════════════════════════════════
-const ADMIN_EMAILS = ['iliasgl14@gmail.com', 'soufiansf90@gmail.com', 'mohamedelfahli1998@gmail.com'];
+const ADMIN_EMAILS = ['iliasgl14@gmail.com', 'soufiansf90@gmail.com', 'mohamedelfahli1998@gmail.com', 'shadowtracker03@gmail.com'];
+const MANAGE_ACCESS_ADMINS = ['iliasgl14@gmail.com', 'soufiansf90@gmail.com'];
 
 function getAllowedEmails() {
   try { return JSON.parse(localStorage.getItem('st_allowed') || '[]'); } catch { return []; }
@@ -994,7 +995,7 @@ function switchTab(t) {
 
 function showErr(id, msg) {
   const el = document.getElementById(id);
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  if (el) { el.innerHTML = msg; el.style.display = 'block'; }
 }
 
 function togglePass(id, btn) {
@@ -1040,7 +1041,7 @@ function goToPayment() {
   if (!/\S+@\S+\.\S+/.test(em)) { showErr('su_err','Please enter a valid email address.'); return; }
   if (pw.length < 8) { showErr('su_err','Password must be at least 8 characters.'); return; }
   if (!terms) { showErr('su_err','Please accept the Terms of Service.'); return; }
-  if (!isAllowed(em)) { showErr('su_err','This email is not on the approved access list. Contact the admin.'); return; }
+  if (!isAllowed(em)) { showErr('su_err','⛔ Access is by approval only. Contact us to get access:<br><a href="mailto:shadowtracker03@gmail.com" style="color:#3b82f6">shadowtracker03@gmail.com</a> &nbsp;|&nbsp; <a href="https://wa.me/+212651623365" target="_blank" style="color:#25d366">WhatsApp</a>'); return; }
   const users = getUsers();
   if (users.find(u => u.em === em)) {
     // Account exists — switch to login and pre-fill email
@@ -1127,7 +1128,7 @@ function doLogin() {
   const em = document.getElementById('li_em').value.trim().toLowerCase();
   const pw = document.getElementById('li_pw').value;
   if (!em || !pw) { showErr('li_err','Please fill in all fields.'); return; }
-  if (!isAllowed(em)) { showErr('li_err','Access denied. Contact the admin to get access.'); return; }
+  if (!isAllowed(em)) { showErr('li_err','⛔ Access denied. To get access contact us:<br><a href="mailto:shadowtracker03@gmail.com" style="color:#3b82f6">shadowtracker03@gmail.com</a> &nbsp;|&nbsp; <a href="https://wa.me/+212651623365" target="_blank" style="color:#25d366">WhatsApp</a>'); return; }
   const users = getUsers();
   const user = users.find(u => u.em === em && u.pw === pw);
   if (!user) { showErr('li_err','Incorrect email or password.'); return; }
@@ -1318,10 +1319,10 @@ function adminRemoveEmail(em) {
   openAdmin();
 }
 
-// Show admin button if logged in as admin
+// Show admin button if logged in as manage-access admin
 window.addEventListener('load', () => {
   const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
-  if (session && isAdmin(session.em)) {
+  if (session && MANAGE_ACCESS_ADMINS.includes(session.em?.toLowerCase())) {
     const btn = document.createElement('button');
     btn.textContent = '⚙️ Manage Access';
     btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font:600 13px Inter,sans-serif;cursor:pointer';
