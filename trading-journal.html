@@ -148,7 +148,7 @@ body {
 
 /* Account selector */
 .account-section {
-  padding: 12px 14px;
+  padding: 10px 14px 12px;
   border-bottom: 1px solid var(--border);
 }
 .account-label {
@@ -157,45 +157,56 @@ body {
   color: var(--text-dim);
   letter-spacing: 2.5px;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
+}
+.account-row {
+  display: flex;
+  gap: 7px;
+  align-items: center;
 }
 .account-selector {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: var(--bg-elevated);
   border: 1.5px solid var(--border);
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  padding: 9px 12px;
+  padding: 8px 28px 8px 10px;
   border-radius: 8px;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 30px;
+  background-position: right 8px center;
   transition: all .2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.account-selector:focus { outline: none; border-color: var(--accent); background-color: var(--bg-card); }
+.account-selector:focus { outline: none; border-color: var(--accent); }
 .account-selector:hover { border-color: var(--border-bright); }
 .btn-new-account {
-  width: 100%;
-  margin-top: 7px;
-  background: transparent;
-  border: 1.5px dashed var(--border);
-  color: var(--text-secondary);
+  flex-shrink: 0;
+  background: var(--accent-subtle);
+  border: 1.5px solid var(--accent-dark);
+  color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 7px;
+  font-size: 16px;
+  font-weight: 300;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   cursor: pointer;
-  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all .2s;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
+  line-height: 1;
 }
-.btn-new-account:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+.btn-new-account:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* Nav */
 .nav-section {
@@ -477,7 +488,7 @@ body {
   padding: 0 28px;
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 1001;
 }
 .topbar-title {
   font-family: var(--font-display);
@@ -1136,14 +1147,12 @@ body {
 @media (max-width: 900px) {
   #sidebar { transform: translateX(-100%); width: 240px !important; }
   #sidebar.open { transform: translateX(0); }
-  #sidebar.open ~ #sidebarOverlay,
-  #sidebar.open + #sidebarOverlay { display: block; }
   #sidebar.open .nav-item-label,
   #sidebar.open .logo-text,
   #sidebar.open .logo-sub,
   #sidebar.open .account-section,
-  #sidebar.open .nav-group-label,
-  #sidebar.open .sidebar-bottom { display: flex !important; }
+  #sidebar.open .nav-group-label { display: flex !important; }
+  #sidebar.open .sidebar-bottom { display: block !important; }
   #sidebar.open .nav-item-label { display: inline !important; }
   #sidebar.open .nav-item { justify-content: flex-start !important; padding: 10px 20px !important; font-size: 14px !important; }
   #sidebar.open .nav-item .nav-icon { font-size: 16px !important; margin: 0 !important; }
@@ -1152,8 +1161,8 @@ body {
   #sidebar.collapsed .nav-group-label,
   #sidebar.collapsed .account-section,
   #sidebar.collapsed .logo-text,
-  #sidebar.collapsed .logo-sub,
-  #sidebar.collapsed .sidebar-bottom { display: flex !important; }
+  #sidebar.collapsed .logo-sub { display: flex !important; }
+  #sidebar.collapsed .sidebar-bottom { display: block !important; }
   #main { margin-left: 0; }
   .hamburger { display: block; }
   .charts-grid { grid-template-columns: 1fr; }
@@ -1342,8 +1351,10 @@ body {
   </div>
   <div class="account-section">
     <div class="account-label">Active Account</div>
-    <select class="account-selector" id="accountSelect" onchange="switchAccount(this.value)"></select>
-    <button class="btn-new-account" onclick="openNewAccountModal()">+ NEW ACCOUNT</button>
+    <div class="account-row">
+      <select class="account-selector" id="accountSelect" onchange="switchAccount(this.value)"></select>
+      <button class="btn-new-account" onclick="openNewAccountModal()" title="New account">+</button>
+    </div>
   </div>
   <div class="nav-section">
     <div class="nav-group-label">OVERVIEW</div>
@@ -2244,38 +2255,44 @@ body {
 
 <!-- New Account Modal -->
 <div class="modal-overlay hidden" id="accountModal">
-  <div class="modal sm">
-    <div class="modal-header">
-      <div class="modal-title">CREATE ACCOUNT</div>
-      <button class="modal-close" onclick="closeAccountModal()">✕</button>
+  <div class="modal sm" style="border-radius:16px;border:1px solid var(--border-bright);overflow:hidden">
+    <!-- Header with gradient accent -->
+    <div style="background:linear-gradient(135deg,var(--bg-elevated) 0%,var(--bg-card) 100%);padding:24px 24px 20px;border-bottom:1px solid var(--border);position:relative">
+      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--accent);margin-bottom:4px">NEW ACCOUNT</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text-primary);letter-spacing:0.5px">Create Trading Account</div>
+      <button onclick="closeAccountModal()" style="position:absolute;top:20px;right:20px;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-secondary);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">✕</button>
     </div>
-    <div class="modal-body">
-      <div style="display:grid;gap:14px">
-        <div class="form-group">
-          <label class="form-label">Account Name</label>
-          <input class="form-input" id="acc_name" placeholder="e.g. Main Account">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Account Size ($)</label>
-          <input class="form-input" type="number" id="acc_size" placeholder="10000">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Account Type</label>
-          <select class="form-select" id="acc_type">
-            <option value="live">Live</option>
-            <option value="demo">Demo</option>
-            <option value="prop">Prop Firm</option>
-            <option value="paper">Paper</option>
+    <div style="padding:24px;display:grid;gap:16px">
+      <!-- Account Name -->
+      <div>
+        <label style="display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Account Name</label>
+        <input class="form-input" id="acc_name" placeholder="e.g. Main Account, Funded Account..." style="width:100%;box-sizing:border-box;border-radius:10px;padding:11px 14px;font-size:14px">
+      </div>
+      <!-- Account Size -->
+      <div>
+        <label style="display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Starting Balance ($)</label>
+        <input class="form-input" type="number" id="acc_size" placeholder="10000" style="width:100%;box-sizing:border-box;border-radius:10px;padding:11px 14px;font-size:14px">
+      </div>
+      <!-- Account Type + Broker side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Type</label>
+          <select class="form-select" id="acc_type" style="width:100%;border-radius:10px;padding:11px 14px;font-size:13px">
+            <option value="live">🔴 Live</option>
+            <option value="demo">🔵 Demo</option>
+            <option value="prop">💎 Prop Firm</option>
+            <option value="paper">📄 Paper</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Broker</label>
-          <input class="form-input" id="acc_broker" placeholder="e.g. ICMarkets">
+        <div>
+          <label style="display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Broker</label>
+          <input class="form-input" id="acc_broker" placeholder="e.g. ICMarkets" style="width:100%;box-sizing:border-box;border-radius:10px;padding:11px 14px;font-size:13px">
         </div>
-        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
-          <button class="btn btn-outline" onclick="closeAccountModal()">CANCEL</button>
-          <button class="btn btn-primary" onclick="createAccount()">CREATE</button>
-        </div>
+      </div>
+      <!-- Buttons -->
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:4px">
+        <button onclick="closeAccountModal()" style="padding:12px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:10px;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--border-bright)'" onmouseout="this.style.borderColor='var(--border)'">CANCEL</button>
+        <button onclick="createAccount()" style="padding:12px;background:var(--accent);border:none;color:#fff;border-radius:10px;font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .2s" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">CREATE ACCOUNT →</button>
       </div>
     </div>
   </div>
@@ -2437,7 +2454,7 @@ function switchTab(page, tab, btn) {
 }
 
 function closeSidebar() {
-  if (window.innerWidth > 900) return; // desktop: never close
+  if (window.innerWidth > 900) return;
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   if (sidebar) sidebar.classList.remove('open');
@@ -2460,8 +2477,7 @@ function toggleSidebar() {
     }
   } else {
     sidebar.classList.toggle('collapsed');
-    const isCollapsed = sidebar.classList.contains('collapsed');
-    if (btn) btn.textContent = isCollapsed ? '▶' : '◀';
+    if (btn) btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
   }
 }
 
@@ -2595,6 +2611,7 @@ function saveTrade() {
     strategy: document.getElementById('t_strategy').value,
     session: document.getElementById('t_session').value,
     notes: document.getElementById('t_notes').value.trim(),
+    riskok: document.getElementById('t_riskok').value,
     tags: currentTags, emotions: currentEmotions, setup: currentSetup, screenshot, rules
   };
   if (!db.trades[db.currentAccount]) db.trades[db.currentAccount] = [];
