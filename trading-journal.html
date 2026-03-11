@@ -2444,8 +2444,6 @@ function getEmptyStats() {
 const pageTitles = { badges:'ACHIEVEMENTS', reportcard:'WEEKLY REPORT CARD', csvimport:'IMPORT TRADES', dashboard:'COMMAND DASHBOARD', riskcalc:'POSITION RISK CALCULATOR', lotcalc:'LOT SIZE CALCULATOR', trades:'TRADE LOG', calendar:'TRADING CALENDAR', monthly:'MONTHLY PERFORMANCE', analytics:'ADVANCED ANALYTICS', behavior:'BEHAVIORAL ANALYSIS', streaks:'STREAK VISUALIZER', coach:'AI TRADING COACH', montecarlo:'MONTE CARLO SIMULATION', risk:'RISK & PROBABILITY', tradedetail:'TRADE DETAIL' };
 
 function showPage(name, navEl) {
-  // Close sidebar on mobile FIRST — before any render that might error
-  if (window.innerWidth <= 900) closeSidebar();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const page = document.getElementById('page-' + name);
   if (page) page.classList.add('active');
@@ -2453,6 +2451,11 @@ function showPage(name, navEl) {
   if (navEl) navEl.classList.add('active');
   const title = document.getElementById('topbarTitle');
   if (title) title.textContent = pageTitles[name] || name.toUpperCase();
+  // Close sidebar on ALL screen sizes when nav item tapped
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
   const renders = { dashboard: renderDashboard, badges: renderBadges, reportcard: renderReportCard, csvimport: renderCSVImport, trades: renderTrades, calendar: renderCalendar, monthly: renderMonthly, analytics: renderAnalytics, behavior: renderBehavior, streaks: renderStreaks, coach: () => {}, montecarlo: () => {} };
   try { if (renders[name]) renders[name](); } catch(e) { console.error('Render error:', e); }
 }
@@ -2468,7 +2471,6 @@ function switchTab(page, tab, btn) {
 }
 
 function closeSidebar() {
-  if (window.innerWidth > 900) return;
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   if (sidebar) sidebar.classList.remove('open');
@@ -2479,17 +2481,15 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   const btn = document.querySelector('.collapse-btn');
-  if (window.innerWidth <= 900) {
-    const isOpen = sidebar.classList.contains('open');
-    if (isOpen) {
-      sidebar.classList.remove('open');
-      if (overlay) overlay.classList.remove('active');
-    } else {
-      sidebar.classList.add('open');
-      sidebar.classList.remove('collapsed');
-      if (overlay) overlay.classList.add('active');
-    }
+  // On mobile (sidebar uses transform), toggle open class
+  if (window.getComputedStyle(sidebar).position === 'fixed' && window.getComputedStyle(sidebar).transform !== 'none' && !sidebar.classList.contains('open')) {
+    sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+  } else if (sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
   } else {
+    // Desktop collapse
     sidebar.classList.toggle('collapsed');
     if (btn) btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
   }
