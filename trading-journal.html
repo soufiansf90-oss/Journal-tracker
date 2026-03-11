@@ -1388,7 +1388,7 @@ body {
     <div class="nav-item" data-label="Monte Carlo" onclick="showPage('montecarlo',this)"><span class="nav-icon">⬡</span> <span class="nav-item-label">Monte Carlo</span></div>
     <div class="nav-item" data-label="Risk Tools" onclick="showPage('risk',this)"><span class="nav-icon">◈</span> <span class="nav-item-label">Risk Tools</span></div>
     <div class="nav-item" data-label="Risk Calc" onclick="showPage('riskcalc',this)"><span class="nav-icon">⊕</span> <span class="nav-item-label">Risk Calc</span></div>
-    <div class="nav-item" data-label="Lot Size Calc" onclick="showPage('lotcalc',this)"><span class="nav-icon">◐</span> <span class="nav-item-label">Lot Size Calc</span></div>
+
   </div>
   <div class="sidebar-bottom">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 10px;background:var(--bg-card);border-radius:5px;border:1px solid var(--border)">
@@ -1710,6 +1710,16 @@ body {
         <div class="chart-container tall"><canvas id="mcChart"></canvas></div>
       </div>
     </div>
+    <div class="card" id="mcGrowthCard" style="display:none;margin-bottom:20px">
+      <div class="card-title">CAPITAL GROWTH BY TRADE — SCENARIO PATHS</div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:24px;height:3px;background:#22c55e;border-radius:2px"></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary)">BEST (90th %ile)</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:24px;height:3px;background:#3b82f6;border-radius:2px"></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary)">MEDIAN</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:24px;height:3px;background:#ef4444;border-radius:2px"></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary)">WORST (10th %ile)</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:24px;height:3px;background:rgba(255,255,255,0.12);border-radius:2px;border:1px dashed rgba(255,255,255,0.2)"></div><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary)">STARTING CAPITAL</span></div>
+      </div>
+      <div class="chart-container" style="height:280px"><canvas id="mcGrowthChart"></canvas></div>
+    </div>
     <div class="mc-scenarios" id="mcScenarios"></div>
   </div>
 
@@ -1717,9 +1727,9 @@ body {
   <div class="page" id="page-risk">
     <div class="section-header"><div class="section-title">RISK & PROBABILITY TOOLS</div></div>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('risk','ror',this)">RISK OF RUIN</button>
-      <button class="tab-btn" onclick="switchTab('risk','expectancy',this)">EXPECTANCY</button>
-      <button class="tab-btn" onclick="switchTab('risk','streakprob',this)">STREAK PROB</button>
+      <button class="tab-btn active" onclick="switchTab('risk','risk-ror',this)">RISK OF RUIN</button>
+      <button class="tab-btn" onclick="switchTab('risk','risk-expectancy',this)">EXPECTANCY</button>
+      <button class="tab-btn" onclick="switchTab('risk','risk-streakprob',this)">STREAK PROB</button>
     </div>
     <div class="tab-content active" id="risk-ror">
       <div class="analysis-grid">
@@ -1859,205 +1869,6 @@ body {
     </div>
   </div>
 
-
-  <!-- ═══ LOT SIZE CALCULATOR PAGE ═══ -->
-  <div class="page" id="page-lotcalc">
-    <div class="section-header"><div class="section-title">LOT SIZE CALCULATOR</div></div>
-
-    <!-- Tabs -->
-    <div class="tabs" style="margin-bottom:24px">
-      <button class="tab-btn active" onclick="switchTab('lot','forex',this)">FOREX</button>
-      <button class="tab-btn" onclick="switchTab('lot','gold',this)">GOLD / XAU</button>
-      <button class="tab-btn" onclick="switchTab('lot','index',this)">INDICES</button>
-      <button class="tab-btn" onclick="switchTab('lot','crypto',this)">CRYPTO</button>
-    </div>
-
-    <!-- FOREX TAB -->
-    <div class="tab-content active" id="lot-forex">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-title">FOREX LOT CALCULATOR</div>
-          <div style="display:grid;gap:14px;margin-top:8px">
-            <div class="form-group"><label class="form-label">Account Balance ($)</label><input class="form-input" id="lc_fx_bal" type="number" value="10000" oninput="calcLotForex()"></div>
-            <div class="form-group"><label class="form-label">Risk Per Trade (%)</label><input class="form-input" id="lc_fx_risk" type="number" value="1" step="0.1" oninput="calcLotForex()"></div>
-            <div class="form-group"><label class="form-label">Stop Loss (pips)</label><input class="form-input" id="lc_fx_sl" type="number" value="20" oninput="calcLotForex()"></div>
-            <div class="form-group">
-              <label class="form-label">Account Currency</label>
-              <select class="form-select" id="lc_fx_curr" onchange="calcLotForex()">
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Pair Type</label>
-              <select class="form-select" id="lc_fx_type" onchange="calcLotForex()">
-                <option value="usd_quote">USD as Quote (EUR/USD, GBP/USD...)</option>
-                <option value="usd_base">USD as Base (USD/JPY, USD/CAD...)</option>
-                <option value="cross">Cross Pair (EUR/GBP...)</option>
-              </select>
-            </div>
-            <div class="form-group" id="lc_fx_ratewrap">
-              <label class="form-label">Conversion Rate (to USD)</label>
-              <input class="form-input" id="lc_fx_rate" type="number" value="1" step="any" oninput="calcLotForex()">
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(59,130,246,0.02))">
-            <div class="card-title">STANDARD LOT SIZE</div>
-            <div id="lc_fx_std" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--accent)">—</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px">1 lot = 100,000 units</div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(34,197,94,0.07),rgba(34,197,94,0.02))">
-            <div class="card-title">MINI LOTS</div>
-            <div id="lc_fx_mini" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green)">—</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px">1 mini = 10,000 units</div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(167,139,250,0.07),rgba(167,139,250,0.02))">
-            <div class="card-title">MICRO LOTS</div>
-            <div id="lc_fx_micro" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--purple)">—</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px">1 micro = 1,000 units</div>
-          </div>
-          <div class="card">
-            <div class="card-title">RISK AMOUNT</div>
-            <div id="lc_fx_riskamt" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red)">—</div>
-          </div>
-        </div>
-      </div>
-      <!-- Lot reference table -->
-      <div class="card" style="margin-top:20px">
-        <div class="card-title">QUICK LOT SIZE TABLE <span style="font-size:9px;color:var(--text-dim)">VARY RISK % — SAME SL</span></div>
-        <div id="lc_fx_table" style="margin-top:14px;overflow-x:auto"></div>
-      </div>
-    </div>
-
-    <!-- GOLD TAB -->
-    <div class="tab-content" id="lot-gold">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-title">GOLD (XAU/USD) LOT CALCULATOR</div>
-          <div style="display:grid;gap:14px;margin-top:8px">
-            <div class="form-group"><label class="form-label">Account Balance ($)</label><input class="form-input" id="lc_g_bal" type="number" value="10000" oninput="calcLotGold()"></div>
-            <div class="form-group"><label class="form-label">Risk Per Trade (%)</label><input class="form-input" id="lc_g_risk" type="number" value="1" step="0.1" oninput="calcLotGold()"></div>
-            <div class="form-group"><label class="form-label">Entry Price ($)</label><input class="form-input" id="lc_g_entry" type="number" placeholder="e.g. 2350.00" step="any" oninput="calcLotGold()"></div>
-            <div class="form-group"><label class="form-label">Stop Loss Price ($)</label><input class="form-input" id="lc_g_sl" type="number" placeholder="e.g. 2340.00" step="any" oninput="calcLotGold()"></div>
-            <div class="form-group"><label class="form-label">Contract Size (oz)</label>
-              <select class="form-select" id="lc_g_contract" onchange="calcLotGold()">
-                <option value="100">Standard (100 oz)</option>
-                <option value="50">Mini (50 oz)</option>
-                <option value="10">Micro (10 oz)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(59,130,246,0.02))">
-            <div class="card-title">LOT SIZE</div>
-            <div id="lc_g_lot" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--accent)">—</div>
-            <div id="lc_g_units" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(239,68,68,0.07),rgba(239,68,68,0.02))">
-            <div class="card-title">RISK IN $</div>
-            <div id="lc_g_riskamt" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red)">—</div>
-            <div id="lc_g_slpips" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(34,197,94,0.07),rgba(34,197,94,0.02))">
-            <div class="card-title">P&L PER $1 MOVE</div>
-            <div id="lc_g_pnl" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green)">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- INDEX TAB -->
-    <div class="tab-content" id="lot-index">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-title">INDEX LOT CALCULATOR</div>
-          <div style="display:grid;gap:14px;margin-top:8px">
-            <div class="form-group"><label class="form-label">Account Balance ($)</label><input class="form-input" id="lc_i_bal" type="number" value="10000" oninput="calcLotIndex()"></div>
-            <div class="form-group"><label class="form-label">Risk Per Trade (%)</label><input class="form-input" id="lc_i_risk" type="number" value="1" step="0.1" oninput="calcLotIndex()"></div>
-            <div class="form-group"><label class="form-label">Entry Price</label><input class="form-input" id="lc_i_entry" type="number" placeholder="e.g. 5200" step="any" oninput="calcLotIndex()"></div>
-            <div class="form-group"><label class="form-label">Stop Loss Price</label><input class="form-input" id="lc_i_sl" type="number" placeholder="e.g. 5150" step="any" oninput="calcLotIndex()"></div>
-            <div class="form-group">
-              <label class="form-label">Index</label>
-              <select class="form-select" id="lc_i_index" onchange="calcLotIndex()">
-                <option value="1">SPX500 (1 pt = $1/lot)</option>
-                <option value="1">NAS100 (1 pt = $1/lot)</option>
-                <option value="10">DJ30 (1 pt = $10/lot)</option>
-                <option value="1">GER40 (1 pt = $1/lot)</option>
-                <option value="1">UK100 (1 pt = $1/lot)</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Point Value ($ per lot)</label><input class="form-input" id="lc_i_ptval" type="number" value="1" step="any" oninput="calcLotIndex()"></div>
-          </div>
-        </div>
-        <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(56,189,248,0.07),rgba(56,189,248,0.02))">
-            <div class="card-title">LOT SIZE</div>
-            <div id="lc_i_lot" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--cyan)">—</div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(239,68,68,0.07),rgba(239,68,68,0.02))">
-            <div class="card-title">RISK AMOUNT</div>
-            <div id="lc_i_riskamt" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red)">—</div>
-            <div id="lc_i_pts" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card">
-            <div class="card-title">P&L PER POINT</div>
-            <div id="lc_i_pnl" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green)">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CRYPTO TAB -->
-    <div class="tab-content" id="lot-crypto">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-title">CRYPTO POSITION CALCULATOR</div>
-          <div style="display:grid;gap:14px;margin-top:8px">
-            <div class="form-group"><label class="form-label">Account Balance ($)</label><input class="form-input" id="lc_c_bal" type="number" value="10000" oninput="calcLotCrypto()"></div>
-            <div class="form-group"><label class="form-label">Risk Per Trade (%)</label><input class="form-input" id="lc_c_risk" type="number" value="1" step="0.1" oninput="calcLotCrypto()"></div>
-            <div class="form-group"><label class="form-label">Entry Price ($)</label><input class="form-input" id="lc_c_entry" type="number" placeholder="e.g. 65000" step="any" oninput="calcLotCrypto()"></div>
-            <div class="form-group"><label class="form-label">Stop Loss Price ($)</label><input class="form-input" id="lc_c_sl" type="number" placeholder="e.g. 63500" step="any" oninput="calcLotCrypto()"></div>
-            <div class="form-group"><label class="form-label">Take Profit Price ($)</label><input class="form-input" id="lc_c_tp" type="number" placeholder="e.g. 70000" step="any" oninput="calcLotCrypto()"></div>
-            <div class="form-group"><label class="form-label">Leverage</label>
-              <select class="form-select" id="lc_c_lev" onchange="calcLotCrypto()">
-                <option value="1">1x (Spot)</option>
-                <option value="2">2x</option>
-                <option value="5">5x</option>
-                <option value="10">10x</option>
-                <option value="20">20x</option>
-                <option value="50">50x</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;gap:16px;align-content:start">
-          <div class="card" style="background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(59,130,246,0.02))">
-            <div class="card-title">POSITION SIZE (COINS)</div>
-            <div id="lc_c_coins" style="font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--accent)">—</div>
-            <div id="lc_c_usd" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(239,68,68,0.07),rgba(239,68,68,0.02))">
-            <div class="card-title">RISK AMOUNT</div>
-            <div id="lc_c_riskamt" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red)">—</div>
-            <div id="lc_c_slpct" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card" style="background:linear-gradient(135deg,rgba(34,197,94,0.07),rgba(34,197,94,0.02))">
-            <div class="card-title">POTENTIAL PROFIT</div>
-            <div id="lc_c_profit" style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green)">—</div>
-            <div id="lc_c_rr" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px"></div>
-          </div>
-          <div class="card">
-            <div class="card-title">LIQUIDATION PRICE</div>
-            <div id="lc_c_liq" style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--orange)">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 
   <!-- ═══ ACHIEVEMENTS PAGE ═══ -->
@@ -4497,143 +4308,6 @@ function resetPnlSign(val) {
   }
 }
 // ══════════════════════════════════════════
-// LOT SIZE CALCULATOR
-// ══════════════════════════════════════════
-
-// ── FOREX ──
-function calcLotForex() {
-  const bal     = parseFloat(document.getElementById('lc_fx_bal').value)  || 0;
-  const riskPct = parseFloat(document.getElementById('lc_fx_risk').value) || 0;
-  const slPips  = parseFloat(document.getElementById('lc_fx_sl').value)   || 0;
-  const rate    = parseFloat(document.getElementById('lc_fx_rate').value) || 1;
-  const type    = document.getElementById('lc_fx_type').value;
-
-  // Pip value per standard lot in account currency
-  let pipValPerLot = 10; // default USD quote
-  if (type === 'usd_base') pipValPerLot = 10 / rate;
-  else if (type === 'cross') pipValPerLot = 10 * rate;
-
-  const riskAmt  = (riskPct / 100) * bal;
-  const lotSize  = slPips > 0 ? riskAmt / (slPips * pipValPerLot) : 0;
-
-  const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
-  setVal('lc_fx_std',     lotSize > 0 ? lotSize.toFixed(2) + ' lots'   : '—');
-  setVal('lc_fx_mini',    lotSize > 0 ? (lotSize*10).toFixed(2) + ' mini' : '—');
-  setVal('lc_fx_micro',   lotSize > 0 ? (lotSize*100).toFixed(0) + ' micro' : '—');
-  setVal('lc_fx_riskamt', riskAmt > 0 ? '$' + riskAmt.toFixed(2)       : '—');
-
-  // Table
-  const risks = [0.25, 0.5, 1, 1.5, 2, 3, 5];
-  const tbl = document.getElementById('lc_fx_table');
-  if (!tbl) return;
-  tbl.innerHTML = `<table class="trade-table" style="width:100%">
-    <thead><tr>
-      <th>RISK %</th><th>RISK $</th><th>STANDARD LOTS</th><th>MINI LOTS</th><th>MICRO LOTS</th><th>PIP VALUE</th>
-    </tr></thead>
-    <tbody>${risks.map(r => {
-      const rd = (r/100)*bal;
-      const ls = slPips > 0 ? rd/(slPips*pipValPerLot) : 0;
-      const active = Math.abs(r - riskPct) < 0.01;
-      return `<tr style="${active?'background:rgba(59,130,246,0.07)':''}">
-        <td style="color:${active?'var(--accent)':'inherit'};font-weight:${active?700:400}">${r}%</td>
-        <td style="color:var(--red)">$${rd.toFixed(2)}</td>
-        <td style="color:var(--accent);font-weight:700">${ls>0?ls.toFixed(2):'—'}</td>
-        <td style="color:var(--green)">${ls>0?(ls*10).toFixed(2):'—'}</td>
-        <td style="color:var(--purple)">${ls>0?(ls*100).toFixed(0):'—'}</td>
-        <td style="color:var(--text-dim)">$${(ls*pipValPerLot).toFixed(2)}/pip</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
-}
-
-// ── GOLD ──
-function calcLotGold() {
-  const bal      = parseFloat(document.getElementById('lc_g_bal').value)      || 0;
-  const riskPct  = parseFloat(document.getElementById('lc_g_risk').value)     || 0;
-  const entry    = parseFloat(document.getElementById('lc_g_entry').value);
-  const sl       = parseFloat(document.getElementById('lc_g_sl').value);
-  const contract = parseFloat(document.getElementById('lc_g_contract').value) || 100;
-
-  const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
-
-  if (!entry || !sl) { ['lc_g_lot','lc_g_riskamt','lc_g_pnl','lc_g_slpips','lc_g_units'].forEach(id => setVal(id,'—')); return; }
-
-  const riskAmt  = (riskPct / 100) * bal;
-  const slDist   = Math.abs(entry - sl);
-  // 1 lot = contract oz. P&L per lot per $1 move = contract oz
-  const pnlPerLotPerDollar = contract;
-  const lotSize  = slDist > 0 ? riskAmt / (slDist * pnlPerLotPerDollar) : 0;
-
-  setVal('lc_g_lot',     lotSize > 0 ? lotSize.toFixed(4) + ' lots' : '—');
-  setVal('lc_g_units',   lotSize > 0 ? (lotSize * contract).toFixed(2) + ' oz' : '');
-  setVal('lc_g_riskamt', '$' + riskAmt.toFixed(2));
-  setVal('lc_g_slpips',  slDist.toFixed(2) + ' pts SL distance');
-  setVal('lc_g_pnl',     lotSize > 0 ? '$' + (lotSize * pnlPerLotPerDollar).toFixed(2) + '/pt' : '—');
-}
-
-// ── INDEX ──
-function calcLotIndex() {
-  const bal    = parseFloat(document.getElementById('lc_i_bal').value)   || 0;
-  const riskPct= parseFloat(document.getElementById('lc_i_risk').value)  || 0;
-  const entry  = parseFloat(document.getElementById('lc_i_entry').value);
-  const sl     = parseFloat(document.getElementById('lc_i_sl').value);
-  const ptVal  = parseFloat(document.getElementById('lc_i_ptval').value) || 1;
-
-  const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
-
-  if (!entry || !sl) { ['lc_i_lot','lc_i_riskamt','lc_i_pnl','lc_i_pts'].forEach(id => setVal(id,'—')); return; }
-
-  const riskAmt = (riskPct/100)*bal;
-  const slPts   = Math.abs(entry - sl);
-  const lotSize = slPts > 0 ? riskAmt / (slPts * ptVal) : 0;
-
-  setVal('lc_i_lot',     lotSize > 0 ? lotSize.toFixed(2) + ' lots' : '—');
-  setVal('lc_i_riskamt', '$' + riskAmt.toFixed(2));
-  setVal('lc_i_pts',     slPts.toFixed(1) + ' pts SL distance');
-  setVal('lc_i_pnl',     lotSize > 0 ? '$' + (lotSize * ptVal).toFixed(2) + '/pt' : '—');
-}
-
-// ── CRYPTO ──
-function calcLotCrypto() {
-  const bal    = parseFloat(document.getElementById('lc_c_bal').value)   || 0;
-  const riskPct= parseFloat(document.getElementById('lc_c_risk').value)  || 0;
-  const entry  = parseFloat(document.getElementById('lc_c_entry').value);
-  const sl     = parseFloat(document.getElementById('lc_c_sl').value);
-  const tp     = parseFloat(document.getElementById('lc_c_tp').value);
-  const lev    = parseFloat(document.getElementById('lc_c_lev').value)   || 1;
-
-  const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
-
-  if (!entry || !sl) {
-    ['lc_c_coins','lc_c_usd','lc_c_riskamt','lc_c_slpct','lc_c_profit','lc_c_rr','lc_c_liq'].forEach(id => setVal(id,'—'));
-    return;
-  }
-
-  const riskAmt  = (riskPct/100)*bal;
-  const slDist   = Math.abs(entry - sl);
-  const slPct    = (slDist/entry)*100;
-  const coins    = riskAmt / slDist;
-  const posUSD   = coins * entry;
-  const capitalNeeded = posUSD / lev;
-
-  // Liquidation price (simplified, no funding)
-  const isLong   = sl < entry;
-  const liqPrice = isLong ? entry * (1 - 1/lev) : entry * (1 + 1/lev);
-
-  // Potential profit
-  const profit   = tp ? coins * Math.abs(tp - entry) : null;
-  const rr       = tp ? Math.abs(tp - entry) / slDist : null;
-
-  setVal('lc_c_coins',   coins > 0 ? coins.toFixed(6) + ' coins' : '—');
-  setVal('lc_c_usd',     coins > 0 ? 'Position: $' + posUSD.toFixed(2) + ' (needs $' + capitalNeeded.toFixed(2) + ')' : '');
-  setVal('lc_c_riskamt', '$' + riskAmt.toFixed(2));
-  setVal('lc_c_slpct',   slPct.toFixed(2) + '% SL distance');
-  setVal('lc_c_profit',  profit !== null ? '$' + profit.toFixed(2) : '—');
-  setVal('lc_c_rr',      rr !== null ? 'R:R = 1:' + rr.toFixed(2) : '');
-  setVal('lc_c_liq',     lev > 1 ? '$' + liqPrice.toFixed(2) : 'N/A (Spot)');
-}
-
-// ══════════════════════════════════════════
 // MONTE CARLO
 // ══════════════════════════════════════════
 function runMonteCarlo() {
@@ -4644,15 +4318,25 @@ function runMonteCarlo() {
   const capital = parseFloat(document.getElementById('mc_capital').value);
   const sims = 500;
   const results = [];
+  const allPaths = [];
   for (let s = 0; s < sims; s++) {
     let acc = capital;
+    const path = [capital];
     for (let t = 0; t < numTrades; t++) {
       if (Math.random() < wr) acc += acc * risk * rr;
       else acc -= acc * risk;
-      if (acc <= 0) { acc = 0; break; }
+      if (acc <= 0) { acc = 0; path.push(0); break; }
+      path.push(parseFloat(acc.toFixed(2)));
     }
+    while (path.length <= numTrades) path.push(path[path.length-1]);
     results.push(parseFloat(acc.toFixed(2)));
+    allPaths.push(path);
   }
+  // Sort by final value to get percentile paths
+  const indexed = results.map((v,i) => ({v,i})).sort((a,b) => a.v - b.v);
+  const pathWorst  = allPaths[indexed[Math.floor(sims*0.1)].i];
+  const pathMedian = allPaths[indexed[Math.floor(sims*0.5)].i];
+  const pathBest   = allPaths[indexed[Math.floor(sims*0.9)].i];
   results.sort((a,b) => a-b);
   const p10 = results[Math.floor(sims*0.1)];
   const p50 = results[Math.floor(sims*0.5)];
@@ -4672,6 +4356,37 @@ function runMonteCarlo() {
     data: { labels: histLabels, datasets: [{ data: hist, backgroundColor: hist.map((_,i) => { const v = min + i * binSize; return v >= capital ? 'rgba(34,197,94,0.65)' : 'rgba(239,68,68,0.55)'; }), borderWidth: 0, borderRadius: 1 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false}, tooltip:{backgroundColor:'#0d1e2e',borderColor:'rgba(59,130,246,0.3)',borderWidth:1,titleColor:'#7ab8d4',bodyColor:'#00d4ff',titleFont:{family:'Share Tech Mono',size:9},bodyFont:{family:'Share Tech Mono',size:9}} }, scales: { x:{grid:{color:'rgba(59,130,246,0.05)'},ticks:{color:'#3a6680',font:{family:'Share Tech Mono',size:8},maxTicksLimit:8}}, y:{grid:{color:'rgba(59,130,246,0.05)'},ticks:{color:'#3a6680',font:{family:'Share Tech Mono',size:9}}} } }
   });
+  // Growth chart
+  const labels = Array.from({length: numTrades+1}, (_,i) => i);
+  destroyChart('mcGrowthChart');
+  const ctx2 = document.getElementById('mcGrowthChart').getContext('2d');
+  charts.mcGrowthChart = new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'BEST (90th)', data: pathBest,   borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.06)',  borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'MEDIAN',      data: pathMedian, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'WORST (10th)',data: pathWorst,  borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)',  borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'START',       data: Array(numTrades+1).fill(capital), borderColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderDash: [6,4], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor:'#0d1e2e', borderColor:'rgba(59,130,246,0.3)', borderWidth:1, titleColor:'#7ab8d4', bodyColor:'#c9d6e8', titleFont:{family:'JetBrains Mono',size:9}, bodyFont:{family:'JetBrains Mono',size:9},
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw)}` }
+        }
+      },
+      scales: {
+        x: { grid:{color:'rgba(59,130,246,0.05)'}, ticks:{color:'#3a6680',font:{family:'JetBrains Mono',size:9},maxTicksLimit:10}, title:{display:true,text:'TRADE #',color:'#3a6680',font:{family:'JetBrains Mono',size:9}} },
+        y: { grid:{color:'rgba(59,130,246,0.05)'}, ticks:{color:'#3a6680',font:{family:'JetBrains Mono',size:9},callback: v => formatCurrencyShort(v)} }
+      }
+    }
+  });
+  document.getElementById('mcGrowthCard').style.display = 'block';
   document.getElementById('mcScenarios').innerHTML = `
     <div class="mc-scenario conservative"><div class="mc-scenario-label">CONSERVATIVE (10th %ile)</div><div class="mc-scenario-value">${formatCurrency(p10)}</div><div class="mc-scenario-desc">Return: ${((p10-capital)/capital*100).toFixed(1)}%</div></div>
     <div class="mc-scenario average"><div class="mc-scenario-label">AVERAGE (Median)</div><div class="mc-scenario-value">${formatCurrency(p50)}</div><div class="mc-scenario-desc">Return: ${((p50-capital)/capital*100).toFixed(1)}%</div></div>
