@@ -832,16 +832,20 @@ footer {
       <!-- ── FORGOT PASSWORD ── -->
       <div id="fForgot" style="display:none;flex-direction:column;gap:16px">
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Reset your password</div>
-          <div style="font-size:12px;color:var(--text2)">Enter your email and we'll send you a 6-digit code.</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Forgot your password?</div>
+          <div style="font-size:12px;color:var(--text2)">Contact the admin to reset your password.</div>
         </div>
-        <div class="field">
-          <label class="label">Email address</label>
-          <div class="input-wrap"><input class="inp" type="email" id="fp_em" placeholder="you@example.com" onkeydown="if(event.key==='Enter')sendResetCode()"></div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Contact admin directly</div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <a href="mailto:shadowtracker03@gmail.com" style="display:inline-flex;align-items:center;gap:6px;background:var(--accentbg);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 14px;font:600 12px 'Inter',sans-serif;color:var(--accent);text-decoration:none">
+              ✉️ Email Admin
+            </a>
+            <a href="https://wa.me/+212651623365" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.3);border-radius:8px;padding:8px 14px;font:600 12px 'Inter',sans-serif;color:#25d366;text-decoration:none">
+              💬 WhatsApp
+            </a>
+          </div>
         </div>
-        <div class="auth-err" id="fp_err"></div>
-        <div id="fp_success" style="font-size:12px;color:var(--green);padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;display:none"></div>
-        <button class="auth-submit" onclick="sendResetCode()">Send reset code →</button>
         <button onclick="backToLogin()" style="background:none;border:none;font:500 13px 'Inter',sans-serif;color:var(--text2);cursor:pointer;text-align:center">← Back to login</button>
       </div>
 
@@ -1161,80 +1165,8 @@ function openForgot() {
   showStep('fForgot');
   document.getElementById('tLogin').classList.remove('on');
   document.getElementById('tSignup').classList.remove('on');
-  document.getElementById('fp_err').style.display = 'none';
-  document.getElementById('fp_success').style.display = 'none';
 }
 function backToLogin() { switchTab('login'); }
-
-async function sendResetCode() {
-  const em = document.getElementById('fp_em').value.trim().toLowerCase();
-  if (!em || !/\S+@\S+\.\S+/.test(em)) { showErr('fp_err','Please enter a valid email address.'); return; }
-  const users = getUsers();
-  const user = users.find(u => u.em === em);
-  if (!user) { showErr('fp_err','No account found with this email address.'); return; }
-
-  // Generate 6-digit code
-  resetCode  = Math.floor(100000 + Math.random() * 900000).toString();
-  resetEmail = em;
-  localStorage.setItem('st_reset', JSON.stringify({ code: resetCode, em: resetEmail, exp: Date.now() + 10*60*1000 }));
-
-  // Send via EmailJS
-  const btn = document.querySelector('#fForgot .auth-submit');
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
-
-  try {
-    await emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
-      to_email: em,
-      name: user.fn || 'Trader',
-      code: resetCode
-    });
-    const succ = document.getElementById('fp_success');
-    succ.textContent = `✓ Code sent to ${em}. Check your inbox (and spam folder).`;
-    succ.style.display = 'block';
-    document.getElementById('fp_err').style.display = 'none';
-    setTimeout(() => {
-      showStep('fReset');
-      document.getElementById('reset_subtitle').textContent = `Code sent to ${em}`;
-    }, 1500);
-  } catch(err) {
-    // EmailJS not configured — show code in alert for testing
-    if (EJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-      showErr('fp_err', `EmailJS not configured yet. For testing: your code is ${resetCode}`);
-      setTimeout(() => {
-        showStep('fReset');
-        document.getElementById('reset_subtitle').textContent = `Code sent to ${em}`;
-      }, 2000);
-    } else {
-      showErr('fp_err', 'Failed to send email. Please try again.');
-    }
-  }
-  btn.disabled = false;
-  btn.textContent = 'Send reset code →';
-}
-
-function confirmReset() {
-  const code  = document.getElementById('fp_code').value.trim();
-  const newpw = document.getElementById('fp_newpw').value;
-  const stored = (() => { try { return JSON.parse(localStorage.getItem('st_reset')); } catch { return null; } })();
-  if (!stored || Date.now() > stored.exp) { showErr('reset_err','Code expired. Please request a new one.'); return; }
-  if (code !== stored.code) { showErr('reset_err','Incorrect code. Please check your email.'); return; }
-  if (newpw.length < 8)    { showErr('reset_err','Password must be at least 8 characters.'); return; }
-  const users = getUsers();
-  const idx = users.findIndex(u => u.em === stored.em);
-  if (idx === -1) { showErr('reset_err','Account not found.'); return; }
-  users[idx].pw = newpw;
-  saveUsers(users);
-  localStorage.removeItem('st_reset');
-  switchTab('login');
-  setTimeout(() => {
-    const succ = document.createElement('div');
-    succ.style.cssText = 'font-size:12px;color:#22c55e;padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;text-align:center';
-    succ.textContent = '✓ Password reset successful. Please log in.';
-    document.getElementById('fLogin').insertBefore(succ, document.getElementById('li_err'));
-    setTimeout(() => succ.remove(), 4000);
-  }, 100);
-}
 
 // ══════════════════════════════════════════
 // ADMIN PANEL
