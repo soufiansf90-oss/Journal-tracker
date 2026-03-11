@@ -699,7 +699,7 @@ body {
 }
 .modal-overlay.hidden { display: none; }
 .modal {
-  background: #13161e;
+  background: var(--bg-panel);
   border: 1px solid var(--border-bright);
   border-radius: 10px;
   width: 700px;
@@ -751,9 +751,9 @@ body {
   text-transform: uppercase;
 }
 .form-input, .form-select, .form-textarea {
-  background: #1e2233;
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #f0f2f7;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 13px;
   padding: 10px 12px;
@@ -1193,13 +1193,13 @@ body {
   font-size: 11px;
   letter-spacing: 1px;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
   transition: all .18s;
   user-select: none;
 }
-.emotion-chip:hover { border-color: var(--accent-dark); color: #fff; background: rgba(255,255,255,0.1); }
+.emotion-chip:hover { border-color: var(--accent-dark); color: var(--text-primary); }
 .emotion-chip.active-fomo  { background:rgba(167,139,250,0.18); border-color:#a78bfa; color:#a78bfa;  }
 .emotion-chip.active-revenge { background:rgba(239,68,68,0.15); border-color:#ef4444; color:#ef4444;  }
 .emotion-chip.active-fear { background:rgba(59,130,246,0.15); border-color:var(--accent); color:var(--accent);  }
@@ -1217,14 +1217,14 @@ body {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: var(--bg-elevated);
   text-align: center;
   transition: all .18s;
   letter-spacing: 1px;
 }
-.setup-btn:hover { border-color: var(--accent-dark); color: #fff; background: rgba(255,255,255,0.1); }
+.setup-btn:hover { border-color: var(--accent-dark); color: var(--text-primary); }
 .setup-btn.active-aplus { background:rgba(34,197,94,0.15); border-color:#22c55e; color:#22c55e;  }
 .setup-btn.active-a { background:rgba(59,130,246,0.13); border-color:var(--accent); color:var(--accent);  }
 .setup-btn.active-b { background:rgba(167,139,250,0.13); border-color:#a78bfa; color:#a78bfa;  }
