@@ -699,7 +699,7 @@ body {
 }
 .modal-overlay.hidden { display: none; }
 .modal {
-  background: var(--bg-panel);
+  background: #13161e;
   border: 1px solid var(--border-bright);
   border-radius: 10px;
   width: 700px;
@@ -751,9 +751,9 @@ body {
   text-transform: uppercase;
 }
 .form-input, .form-select, .form-textarea {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
+  background: #1e2233;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #f0f2f7;
   font-family: var(--font-mono);
   font-size: 13px;
   padding: 10px 12px;
@@ -764,7 +764,6 @@ body {
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   outline: none;
   border-color: var(--accent);
-  
 }
 .form-select { appearance: none; -webkit-appearance: none; cursor: pointer; }
 .form-textarea { resize: vertical; min-height: 80px; }
@@ -1194,13 +1193,13 @@ body {
   font-size: 11px;
   letter-spacing: 1px;
   cursor: pointer;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  background: var(--bg-elevated);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.05);
   transition: all .18s;
   user-select: none;
 }
-.emotion-chip:hover { border-color: var(--accent-dark); color: var(--text-primary); }
+.emotion-chip:hover { border-color: var(--accent-dark); color: #fff; background: rgba(255,255,255,0.1); }
 .emotion-chip.active-fomo  { background:rgba(167,139,250,0.18); border-color:#a78bfa; color:#a78bfa;  }
 .emotion-chip.active-revenge { background:rgba(239,68,68,0.15); border-color:#ef4444; color:#ef4444;  }
 .emotion-chip.active-fear { background:rgba(59,130,246,0.15); border-color:var(--accent); color:var(--accent);  }
@@ -1218,14 +1217,14 @@ body {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  background: var(--bg-elevated);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.05);
   text-align: center;
   transition: all .18s;
   letter-spacing: 1px;
 }
-.setup-btn:hover { border-color: var(--accent-dark); color: var(--text-primary); }
+.setup-btn:hover { border-color: var(--accent-dark); color: #fff; background: rgba(255,255,255,0.1); }
 .setup-btn.active-aplus { background:rgba(34,197,94,0.15); border-color:#22c55e; color:#22c55e;  }
 .setup-btn.active-a { background:rgba(59,130,246,0.13); border-color:var(--accent); color:var(--accent);  }
 .setup-btn.active-b { background:rgba(167,139,250,0.13); border-color:#a78bfa; color:#a78bfa;  }
@@ -2147,6 +2146,13 @@ body {
           <input class="form-input" type="number" id="t_risk" placeholder="1.0" step="0.1" oninput="autoCalc()">
         </div>
         <div class="form-group">
+          <label class="form-label">R:R Ratio</label>
+          <div style="display:flex;gap:0">
+            <div id="rrSignBtn" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);border-right:none;color:#22c55e;font-family:var(--font-display);font-size:15px;font-weight:700;padding:0 12px;border-radius:4px 0 0 4px;min-width:40px;display:flex;align-items:center;justify-content:center;user-select:none">+</div>
+            <input class="form-input" type="number" id="t_rr_manual" placeholder="1.5" step="0.1" style="border-radius:0 4px 4px 0;border-left:none">
+          </div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Lot Size</label>
           <input class="form-input" type="number" id="t_lots" placeholder="0.01" step="any">
         </div>
@@ -2573,6 +2579,9 @@ function resetTradeForm() {
     if (el) el.selectedIndex = 0;
   });
   const risk = document.getElementById('t_risk'); if (risk) risk.value = '';
+  const rrm = document.getElementById('t_rr_manual'); if (rrm) rrm.value = '';
+  const rrSign = document.getElementById('rrSignBtn');
+  if (rrSign) { rrSign.textContent = '+'; rrSign.style.background='rgba(34,197,94,0.15)'; rrSign.style.borderColor='rgba(34,197,94,0.4)'; rrSign.style.color='#22c55e'; }
   const img = document.getElementById('screenshotPreview');
   const placeholder = document.getElementById('screenshotPlaceholder');
   if (img) { img.src = ''; img.style.display = 'none'; }
@@ -2584,6 +2593,7 @@ function fillTradeForm(t) {
   set('t_date', t.date ? t.date.slice(0,16) : '');
   set('t_asset', t.asset); set('t_entry', t.entry); set('t_sl', t.sl); set('t_tp', t.tp);
   set('t_lots', t.lots); set('t_pnl', t.pnl); set('t_notes', t.notes); set('t_risk', t.risk);
+  set('t_rr_manual', t.rr_manual || '');
   const dir = document.getElementById('t_direction'); if (dir) dir.value = t.direction||'long';
   const res = document.getElementById('t_result'); if (res) res.value = t.result||'win';
   const strat = document.getElementById('t_strategy'); if (strat) strat.value = t.strategy||'';
@@ -2609,7 +2619,10 @@ function saveTrade() {
   const entry = parseFloat(document.getElementById('t_entry').value) || null;
   const sl = parseFloat(document.getElementById('t_sl').value) || null;
   const tp = parseFloat(document.getElementById('t_tp').value) || null;
-  const rr = (entry && sl && tp) ? calcRRValue(entry, sl, tp) : null;
+  const rrManual = parseFloat(document.getElementById('t_rr_manual').value) || null;
+  const result = document.getElementById('t_result').value;
+  const rrCalc = (entry && sl && tp) ? calcRRValue(entry, sl, tp) : null;
+  const rr = rrCalc || (rrManual ? (result === 'loss' ? -Math.abs(rrManual) : Math.abs(rrManual)) : null);
   const imgEl = document.getElementById('screenshotPreview');
   const screenshot = imgEl && imgEl.src && imgEl.style.display !== 'none' ? imgEl.src : null;
   const rules = {};
@@ -2622,6 +2635,7 @@ function saveTrade() {
     result: document.getElementById('t_result').value,
     lots: parseFloat(document.getElementById('t_lots').value) || 1,
     risk: parseFloat(document.getElementById('t_risk').value) || null,
+    rr_manual: parseFloat(document.getElementById('t_rr_manual').value) || null,
     strategy: document.getElementById('t_strategy').value,
     session: document.getElementById('t_session').value,
     notes: document.getElementById('t_notes').value.trim(),
@@ -3217,27 +3231,27 @@ function renderTagsUI() {
 
 // ── EMOTION / SETUP / STRATEGY FUNCTIONS ──
 function toggleEmotion(emotion) {
-  const idx = selectedEmotions.indexOf(emotion);
-  if (idx === -1) selectedEmotions.push(emotion);
-  else selectedEmotions.splice(idx, 1);
+  const idx = currentEmotions.indexOf(emotion);
+  if (idx === -1) currentEmotions.push(emotion);
+  else currentEmotions.splice(idx, 1);
   renderEmotionChips();
 }
 function renderEmotionChips() {
   const chips = document.querySelectorAll('.emotion-chip');
   chips.forEach(chip => {
     const em = chip.getAttribute('onclick').match(/'([^']+)'/)[1];
-    chip.className = 'emotion-chip' + (selectedEmotions.includes(em) ? ' active-' + em : '');
+    chip.className = 'emotion-chip' + (currentEmotions.includes(em) ? ' active-' + em : '');
   });
 }
 function selectSetup(s) {
-  selectedSetup = selectedSetup === s ? null : s;
+  currentSetup = currentSetup === s ? null : s;
   renderSetupBtns();
 }
 function renderSetupBtns() {
   const btns = document.querySelectorAll('.setup-btn');
   btns.forEach(btn => {
     const s = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
-    btn.className = 'setup-btn' + (selectedSetup === s ? ' active-' + s : '');
+    btn.className = 'setup-btn' + (currentSetup === s ? ' active-' + s : '');
   });
 }
 function populateStrategySelect() {
@@ -4446,6 +4460,21 @@ function autoSetPnlSign(result) {
   if (result === 'win')  { pnlSign =  1; resetPnlSign(1);  }
   if (result === 'loss') { pnlSign = -1; resetPnlSign(-1); }
   if (result === 'be')   { pnlSign =  1; resetPnlSign(1);  }
+  // Update RR sign
+  const rrSign = document.getElementById('rrSignBtn');
+  if (rrSign) {
+    if (result === 'loss') {
+      rrSign.textContent = '−';
+      rrSign.style.background = 'rgba(239,68,68,0.15)';
+      rrSign.style.borderColor = 'rgba(239,68,68,0.4)';
+      rrSign.style.color = '#ef4444';
+    } else {
+      rrSign.textContent = '+';
+      rrSign.style.background = 'rgba(34,197,94,0.15)';
+      rrSign.style.borderColor = 'rgba(34,197,94,0.4)';
+      rrSign.style.color = '#22c55e';
+    }
+  }
 }
 function togglePnlSign() {
   pnlSign = pnlSign === 1 ? -1 : 1;
