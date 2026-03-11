@@ -2522,13 +2522,16 @@ const BADGE_DEFS = [
 
 function checkAchievements() {
   const trades = getTrades();
-  const earned = JSON.parse(localStorage.getItem('st_badges') || '{}');
+  const earned = {};
   const today = new Date().toLocaleDateString();
   const sorted = [...trades].sort((a,b) => new Date(a.date)-new Date(b.date));
   const stats = trades.length ? computeStats(trades) : getEmptyStats();
+  // Load old earned dates so we preserve when they were first earned
+  const prevEarned = JSON.parse(localStorage.getItem('st_badges') || '{}');
 
   function award(id) {
-    if (!earned[id]) { earned[id] = today; showBadgeNotification(BADGE_DEFS.find(b=>b.id===id)); }
+    earned[id] = prevEarned[id] || today;
+    if (!prevEarned[id]) showBadgeNotification(BADGE_DEFS.find(b=>b.id===id));
   }
 
   if (trades.length >= 1)   award('first_trade');
@@ -2980,6 +2983,7 @@ function deleteTrade(id) {
   if (!confirm('Delete this trade?')) return;
   db.trades[db.currentAccount] = db.trades[db.currentAccount].filter(t => t.id !== id);
   saveDB();
+  checkAchievements();
   renderTrades();
   renderDashboard();
   showNotification('Trade deleted', 'success');
