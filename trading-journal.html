@@ -2406,7 +2406,7 @@ function fillTradeForm(t) {
   set('t_lots', t.lots); set('t_pnl', t.pnl); set('t_notes', t.notes); set('t_risk', t.risk);
   set('t_rr_manual', t.rr_manual || '');
   const dir = document.getElementById('t_direction'); if (dir) dir.value = t.direction||'long';
-  const res = document.getElementById('t_result'); if (res) res.value = t.result||'win';
+  const res = document.getElementById('t_result'); if (res) { res.value = t.result||'win'; autoSetPnlSign(res.value); }
   const strat = document.getElementById('t_strategy'); if (strat) strat.value = t.strategy||'';
   const sess = document.getElementById('t_session'); if (sess) sess.value = t.session||'';
   currentTags = t.tags||[]; currentEmotions = t.emotions||[]; currentSetup = t.setup||'';
