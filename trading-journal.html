@@ -98,7 +98,7 @@ body {
   flex-direction: column;
   position: fixed;
   left: 0; top: 0; bottom: 0;
-  z-index: 100;
+  z-index: 1000;
   transition: transform .3s ease;
 }
 
@@ -1131,10 +1131,13 @@ body {
 
 /* Mobile hamburger */
 .hamburger { display: none; background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
 
 @media (max-width: 900px) {
   #sidebar { transform: translateX(-100%); width: 240px !important; }
   #sidebar.open { transform: translateX(0); }
+  #sidebar.open ~ #sidebarOverlay,
+  #sidebar.open + #sidebarOverlay { display: block; }
   #sidebar.open .nav-item-label,
   #sidebar.open .logo-text,
   #sidebar.open .logo-sub,
@@ -1381,7 +1384,8 @@ body {
   </div>
 </nav>
 
-<!-- QUICK ADD FAB -->
+<!-- Sidebar overlay for mobile close -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <button class="quick-add-fab" onclick="openTradeModal()" title="Quick add trade">+</button>
 
 <!-- MAIN -->
@@ -2118,6 +2122,10 @@ body {
           <input class="form-input" type="number" id="t_risk" placeholder="1.0" step="0.1" oninput="autoCalc()">
         </div>
         <div class="form-group">
+          <label class="form-label">Lot Size</label>
+          <input class="form-input" type="number" id="t_lots" placeholder="0.01" step="any">
+        </div>
+        <div class="form-group">
           <label class="form-label">P&L ($)</label>
           <div style="display:flex;gap:0">
             <button type="button" id="pnlSignBtn" onclick="togglePnlSign()"
@@ -2299,6 +2307,8 @@ let calMonth = new Date().getMonth();
 let calYear = new Date().getFullYear();
 let csvPageParsed = [];
 let csvSelectedFormat = 'auto';
+let screenshotData = '';
+let csvParsedTrades = [];
 
 function loadDB() {
   try {
@@ -2361,6 +2371,13 @@ function computeStats(trades) {
     else { curStreak = curStreak < 0 ? curStreak-1 : -1; }
     if (Math.abs(curStreak) > Math.abs(maxStreak)) maxStreak = curStreak;
   });
+  // Win/loss streaks
+  let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
+  sorted.forEach(t => {
+    if (t.result === 'win') { curWin++; curLoss = 0; if (curWin > maxWinStreak) maxWinStreak = curWin; }
+    else if (t.result === 'loss') { curLoss++; curWin = 0; if (curLoss > maxLossStreak) maxLossStreak = curLoss; }
+    else { curWin = 0; curLoss = 0; }
+  });
   streak = curStreak;
   // Win days
   const dayMap = {};
@@ -2372,11 +2389,22 @@ function computeStats(trades) {
   });
   const winDays = Object.values(dayMap).filter(v => v > 0).length;
   const lossDays = Object.values(dayMap).filter(v => v < 0).length;
-  return { count: trades.length, wins: wins.length, losses: losses.length, bes: bes.length, pnl, grossWin, grossLoss, winRate, profitFactor, avgWin, avgLoss, avgRR, bestTrade, worstTrade, maxDD, streak, maxStreak, equity, winDays, lossDays };
+  return { 
+    count: trades.length, totalTrades: trades.length,
+    wins: wins.length, losses: losses.length, bes: bes.length,
+    pnl, totalPnl: pnl, grossWin, grossLoss,
+    winRate, profitFactor,
+    avgWin, avgLoss, avgRR,
+    bestTrade, worstTrade,
+    maxDD, maxDrawdown: maxDD,
+    streak, curStreak, maxStreak, maxWinStreak, maxLossStreak,
+    equity, winDays, lossDays,
+    expectancy: trades.length ? (winRate/100 * avgWin) - ((1 - winRate/100) * avgLoss) : 0
+  };
 }
 
 function getEmptyStats() {
-  return { count:0, wins:0, losses:0, bes:0, pnl:0, grossWin:0, grossLoss:0, winRate:0, profitFactor:0, avgWin:0, avgLoss:0, avgRR:0, bestTrade:0, worstTrade:0, maxDD:0, streak:0, maxStreak:0, equity:0, winDays:0, lossDays:0 };
+  return { count:0, totalTrades:0, wins:0, losses:0, bes:0, pnl:0, totalPnl:0, grossWin:0, grossLoss:0, winRate:0, profitFactor:0, avgWin:0, avgLoss:0, avgRR:0, bestTrade:0, worstTrade:0, maxDD:0, maxDrawdown:0, streak:0, curStreak:0, maxStreak:0, maxWinStreak:0, maxLossStreak:0, equity:0, winDays:0, lossDays:0, expectancy:0 };
 }
 
 // ══════════════════════════════════════════
@@ -2390,12 +2418,12 @@ function showPage(name, navEl) {
   if (page) page.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (navEl) navEl.classList.add('active');
-  const title = document.getElementById('pageTitle');
+  const title = document.getElementById('topbarTitle');
   if (title) title.textContent = pageTitles[name] || name.toUpperCase();
   const renders = { dashboard: renderDashboard, badges: renderBadges, reportcard: renderReportCard, csvimport: renderCSVImport, trades: renderTrades, calendar: renderCalendar, monthly: renderMonthly, analytics: renderAnalytics, behavior: renderBehavior, streaks: renderStreaks, coach: () => {}, montecarlo: () => {} };
   if (renders[name]) renders[name]();
   // Close sidebar on mobile
-  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+  if (window.innerWidth <= 900) closeSidebar();
 }
 
 function switchTab(page, tab, btn) {
@@ -2408,13 +2436,28 @@ function switchTab(page, tab, btn) {
   if (btn) btn.classList.add('active');
 }
 
+function closeSidebar() {
+  if (window.innerWidth > 900) return; // desktop: never close
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.style.display = 'none';
+}
+
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
   const btn = document.querySelector('.collapse-btn');
   if (window.innerWidth <= 900) {
-    // Mobile: just show/hide, always with full labels
-    sidebar.classList.toggle('open');
-    sidebar.classList.remove('collapsed');
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      sidebar.classList.remove('open');
+      if (overlay) overlay.style.display = 'none';
+    } else {
+      sidebar.classList.add('open');
+      sidebar.classList.remove('collapsed');
+      if (overlay) overlay.style.display = 'block';
+    }
   } else {
     sidebar.classList.toggle('collapsed');
     const isCollapsed = sidebar.classList.contains('collapsed');
@@ -2595,49 +2638,8 @@ function logoutUser() {
   }
 }
 
-function guestBlock() {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center';
-  overlay.innerHTML = `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;max-width:360px">
-    <div style="font-size:32px;margin-bottom:12px">🔒</div>
-    <div style="font-size:16px;font-weight:700;margin-bottom:8px">Demo Mode</div>
-    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Create an account to save trades and access all features.</div>
-    <a href="index.html" style="display:inline-block;background:var(--accent);color:#fff;padding:11px 24px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Create Account →</a>
-    <button onclick="this.parentElement.parentElement.remove()" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:13px">Maybe later</button>
-  </div>`;
-  document.body.appendChild(overlay);
-}
+// guestBlock defined below near INIT
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadDB();
-  renderAccountSelect();
-  renderDashboard();
-  // Session check
-  const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
-  if (!session) { window.location.href = 'index.html'; return; }
-  if (session.guest) {
-    injectDemoData();
-    const banner = document.getElementById('guestBanner');
-    if (banner) banner.style.display = 'flex';
-  }
-  const nameEl = document.getElementById('userNameDisplay');
-  if (nameEl && session.nm) nameEl.textContent = session.nm;
-  // Daily check-in
-  const last = localStorage.getItem('st_checkin_date');
-  if (!session.guest && last !== new Date().toDateString()) {
-    setTimeout(() => {
-      const modal = document.getElementById('checkinModal');
-      if (modal) modal.classList.remove('hidden');
-    }, 1200);
-  }
-  applyTheme(localStorage.getItem('st_theme') || 'dark');
-  // Always start expanded — remove any saved collapsed state
-  localStorage.removeItem('st_sidebar');
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.classList.remove('collapsed');
-  const btn = document.querySelector('.collapse-btn');
-  if (btn) btn.textContent = '◀';
-});
 
 // ══════════════════════════════════════════
 
@@ -2745,6 +2747,15 @@ function renderBadges() {
 // ══════════════════════════════════════════
 // WEEKLY REPORT CARD
 // ══════════════════════════════════════════
+function openWeeklyReport(weekIdx) {
+  const modal = document.getElementById('reportModal');
+  if (modal) { modal.classList.remove('hidden'); renderReportCard(); }
+}
+function closeReportModal() {
+  const modal = document.getElementById('reportModal');
+  if (modal) modal.classList.add('hidden');
+}
+
 function getWeeks(trades) {
   if (!trades.length) return [];
   const sorted = [...trades].sort((a,b) => new Date(a.date)-new Date(b.date));
@@ -3007,7 +3018,6 @@ function importCsvPage() {
 // ══════════════════════════════════════════
 // BROKER CSV IMPORT
 // ══════════════════════════════════════════
-let csvParsedTrades = [];
 
 function openCsvModal() { document.getElementById('csvModal').classList.remove('hidden'); }
 function closeCsvModal() {
@@ -4845,28 +4855,31 @@ function guestBlock() {
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // Apply saved theme
-  const savedTheme = localStorage.getItem('st_theme') || 'dark';
-  applyTheme(savedTheme);
+  applyTheme(localStorage.getItem('st_theme') || 'dark');
+
+  // Sidebar always starts expanded
+  localStorage.removeItem('st_sidebar');
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.remove('collapsed');
+  const colBtn = document.querySelector('.collapse-btn');
+  if (colBtn) colBtn.textContent = '◀';
 
   // Session check
   const session = (() => { try { return JSON.parse(localStorage.getItem('st_session')); } catch { return null; } })();
-  const isGuest = session?.guest === true;
+  if (!session) { window.location.href = 'index.html'; return; }
 
-  // Show user in sidebar
+  // Show user name in sidebar
   const userEl = document.getElementById('sidebar-user');
   if (userEl) userEl.textContent = (session?.nm || 'TRADER').toUpperCase();
 
+  const isGuest = session?.guest === true;
+
   if (isGuest) {
-    // Show banner
     const banner = document.getElementById('guestBanner');
-    if (banner) { banner.style.display = 'flex'; document.getElementById('app').style.marginTop = '40px'; }
-    // Inject demo data instead of loading from localStorage
+    if (banner) { banner.style.display = 'flex'; const app = document.getElementById('app'); if (app) app.style.marginTop = '40px'; }
     injectDemoData();
     renderAccountSelect();
     renderDashboard();
-    // Block all write actions
-    const origOpen = window.openTradeModal;
     window.openTradeModal = () => guestBlock();
     window.openNewAccountModal = () => guestBlock();
     window.exportData = () => guestBlock();
@@ -4874,18 +4887,29 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDB();
     renderAccountSelect();
     renderDashboard();
+    // Daily check-in
+    const last = localStorage.getItem('st_checkin_date');
+    if (last !== new Date().toDateString()) {
+      setTimeout(() => {
+        const modal = document.getElementById('checkinModal');
+        if (modal) modal.classList.remove('hidden');
+      }, 1200);
+    }
   }
-  // Set default month navigation
+
+  // Init month/year vars
   calYear = new Date().getFullYear();
   calMonth = new Date().getMonth();
   monthYear = new Date().getFullYear();
   monthMonth = new Date().getMonth();
+
   // Close modals on overlay click
   document.getElementById('tradeModal').addEventListener('click', function(e) { if(e.target===this) closeTradeModal(); });
   document.getElementById('accountModal').addEventListener('click', function(e) { if(e.target===this) closeAccountModal(); });
   document.getElementById('dayModal').addEventListener('click', function(e) { if(e.target===this) closeDayModal(); });
   document.getElementById('strategyModal').addEventListener('click', function(e) { if(e.target===this) closeStrategyModal(); });
   document.getElementById('rulesModal').addEventListener('click', function(e) { if(e.target===this) closeRulesModal(); });
+
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
