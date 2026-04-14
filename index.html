@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SHADOW — Professional Trading Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--bg2:#020a0a;--bg3:#041212;
+  --teal:#00e5cc;--teal2:#00ffcc;--teal3:#009688;
+  --t1:#e8fffc;--t2:#4d9e94;--t3:#1a4a44;
+  --red:#ff4560;--gold:#ffb300;--green:#00e676;
+  --bd:rgba(0,229,204,0.14);--bd2:rgba(0,229,204,0.06);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:'Inter',sans-serif;overflow-x:hidden;min-height:100vh}
+::selection{background:rgba(0,229,204,0.18)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:rgba(0,229,204,0.2);border-radius:2px}
+canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:64px;padding:0 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:all .3s;
+}
+nav.stuck{background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd)}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:6px;
+  color:transparent;background:linear-gradient(90deg,#fff 20%,var(--teal));
+  -webkit-background-clip:text;background-clip:text}
+.nav-r{display:flex;align-items:center;gap:10px}
+.nav-a{padding:7px 14px;border-radius:7px;font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:1.5px;color:var(--t3);text-decoration:none;transition:all .2s}
+.nav-a:hover{color:var(--teal);background:rgba(0,229,204,0.07)}
+.nav-register{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 20px;border-radius:9px;
+  border:1px solid rgba(0,229,204,0.35);
+  background:rgba(0,229,204,0.07);
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;
+  color:var(--teal);cursor:pointer;transition:all .2s;
+}
+.nav-register:hover{background:rgba(0,229,204,0.15);border-color:var(--teal);transform:scale(1.03)}
+.nav-register svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-buy{
+  padding:9px 22px;border-radius:9px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#006b5e,var(--teal3),var(--teal));
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:#000;
+  box-shadow:0 0 22px rgba(0,229,204,0.28);transition:all .2s;
+}
+.nav-buy:hover{transform:translateY(-1px);box-shadow:0 0 36px rgba(0,229,204,0.5)}
+
+/* ── HERO ── */
+.hero{
+  position:relative;z-index:1;
+  min-height:100vh;display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;gap:64px;padding:100px 56px 60px;max-width:1200px;margin:0 auto;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,229,204,0.07);border:1px solid rgba(0,229,204,0.18);
+  border-radius:100px;padding:6px 16px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2.5px;color:var(--teal);
+  margin-bottom:26px;
+}
+.pulse{width:5px;height:5px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 7px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.hero-h1{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(40px,5vw,72px);
+  font-weight:800;line-height:.95;letter-spacing:-2px;
+  margin-bottom:20px;
+}
+.h1a{display:block;color:#fff}
+.h1b{
+  display:block;color:transparent;
+  background:linear-gradient(90deg,var(--teal) 0%,#00ffb3 55%,var(--teal) 100%);
+  background-size:200%;-webkit-background-clip:text;background-clip:text;
+  animation:shimmer 5s linear infinite;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.hero-p{font-size:15px;color:var(--t2);line-height:1.8;margin-bottom:36px;max-width:480px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px}
+.btn-p{
+  padding:14px 36px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#006b5e,var(--teal3),var(--teal));
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;color:#000;
+  box-shadow:0 0 32px rgba(0,229,204,0.3);transition:all .22s;
+}
+.btn-p:hover{transform:translateY(-3px);box-shadow:0 0 50px rgba(0,229,204,0.5)}
+.btn-g{
+  padding:14px 28px;border-radius:12px;border:1px solid rgba(0,229,204,0.3);
+  background:rgba(0,229,204,0.06);font-family:'Syne',sans-serif;font-size:14px;
+  font-weight:600;letter-spacing:2px;color:var(--teal);cursor:pointer;
+  transition:all .22s;text-decoration:none;display:inline-flex;align-items:center;
+}
+.btn-g:hover{background:rgba(0,229,204,0.12);border-color:var(--teal);transform:translateY(-2px)}
+.hero-trust{display:flex;align-items:center;gap:14px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:1px;flex-wrap:wrap}
+.ts{width:1px;height:12px;background:var(--bd)}
+
+/* HERO CARD */
+.hcard{
+  background:rgba(4,18,16,0.92);border:1px solid rgba(0,229,204,0.16);
+  border-radius:18px;overflow:hidden;
+  box-shadow:0 40px 90px rgba(0,0,0,.7),0 0 60px rgba(0,229,204,0.04);
+  animation:float 6s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.hcard-top{background:rgba(2,8,6,.95);padding:11px 15px;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(0,229,204,0.1)}
+.hd{width:9px;height:9px;border-radius:50%}
+.hcard-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);letter-spacing:2px;margin-left:6px}
+.hcard-body{padding:16px}
+.hcg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.hcm{background:rgba(0,229,204,0.05);border:1px solid rgba(0,229,204,0.1);border-radius:8px;padding:10px 12px}
+.hcml{font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:1.5px;color:var(--t3);margin-bottom:4px}
+.hcmv{font-family:'Syne',sans-serif;font-size:17px;font-weight:800}
+.hcch{background:rgba(0,229,204,0.03);border:1px solid rgba(0,229,204,0.08);
+  border-radius:8px;height:58px;display:flex;align-items:flex-end;padding:7px;gap:3px;overflow:hidden}
+.hcb{border-radius:2px 2px 0 0;flex:1;min-height:4px;opacity:.8}
+.hctags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.htag{padding:3px 8px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:1px;background:rgba(0,229,204,0.07);color:rgba(0,255,200,0.65);border:1px solid rgba(0,229,204,0.14)}
+
+/* ── STATS BAR ── */
+.stats{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  background:rgba(4,12,10,.7);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);
+  backdrop-filter:blur(12px);
+}
+.si{padding:24px 18px;text-align:center;border-right:1px solid var(--bd2)}
+.si:last-child{border-right:none}
+.sv{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--teal);letter-spacing:-1px;margin-bottom:3px}
+.sl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--t3)}
+
+/* ── FEATURES ── */
+.fsec{position:relative;z-index:1;padding:96px 56px;max-width:1200px;margin:0 auto}
+.sec-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:4px;color:var(--teal);text-align:center;margin-bottom:10px}
+.sec-h{font-family:'Syne',sans-serif;font-size:clamp(26px,3.5vw,44px);font-weight:800;letter-spacing:-1.5px;text-align:center;color:#fff;margin-bottom:10px}
+.sec-p{font-size:15px;color:var(--t2);text-align:center;max-width:480px;margin:0 auto 56px;line-height:1.75}
+
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.bc{
+  background:rgba(4,12,10,.88);border:1px solid var(--bd);
+  border-radius:16px;padding:28px 24px;position:relative;overflow:hidden;transition:all .28s;
+}
+.bc::after{content:'';position:absolute;inset:0;border-radius:16px;opacity:0;transition:opacity .28s;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(0,229,204,0.07) 0%,transparent 60%)}
+.bc:hover{border-color:rgba(0,229,204,0.3);transform:translateY(-4px);box-shadow:0 22px 50px rgba(0,0,0,.4)}.bc:hover::after{opacity:1}
+.c4{grid-column:span 4}.c3{grid-column:span 3}.c5{grid-column:span 5}.c7{grid-column:span 7}
+.bc-acc{width:30px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--teal),#00ffb3);margin-bottom:14px}
+.bc-ico{font-size:26px;margin-bottom:12px;display:block}
+.bc-t{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:7px}
+.bc-d{font-size:13px;color:var(--t2);line-height:1.6}
+.bc-pill{display:inline-flex;margin-top:12px;padding:3px 9px;border-radius:5px;
+  font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;
+  background:rgba(0,229,204,0.07);color:var(--teal);border:1px solid rgba(0,229,204,0.15)}
+.mch{display:flex;align-items:flex-end;gap:3px;height:46px;margin-top:12px}
+.mb{flex:1;border-radius:2px 2px 0 0;min-height:4px;opacity:.7}
+
+/* ── HOW ── */
+.how{position:relative;z-index:1;padding:90px 56px;max-width:960px;margin:0 auto}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+.step{text-align:center;padding:32px 22px;background:rgba(4,12,10,.7);
+  border:1px solid var(--bd);border-radius:16px;transition:all .25s;position:relative}
+.step:hover{border-color:rgba(0,229,204,0.3);transform:translateY(-4px)}
+.step::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:48px;height:2px;background:linear-gradient(90deg,transparent,var(--teal),transparent)}
+.sn{width:42px;height:42px;border-radius:50%;background:rgba(0,229,204,0.08);
+  border:1px solid rgba(0,229,204,0.2);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--teal)}
+.st{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:8px}
+.sd{font-size:13px;color:var(--t2);line-height:1.6}
+
+/* ── DEMO MOCKUP ── */
+.demo{position:relative;z-index:1;padding:90px 56px;text-align:center;
+  background:linear-gradient(180deg,transparent,rgba(0,229,204,0.02),transparent)}
+.mockup{max-width:820px;margin:46px auto 0;background:rgba(4,12,10,.96);
+  border:1px solid rgba(0,229,204,0.16);border-radius:16px;overflow:hidden;
+  box-shadow:0 44px 110px rgba(0,0,0,.75)}
+.mtop{background:rgba(2,6,4,.95);padding:12px 18px;display:flex;align-items:center;
+  gap:7px;border-bottom:1px solid rgba(0,229,204,0.08)}
+.md{width:10px;height:10px;border-radius:50%}
+.murl{flex:1;margin-left:8px;background:rgba(0,229,204,0.04);border:1px solid var(--bd2);
+  border-radius:5px;padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);text-align:left}
+.mbody{padding:18px}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.mc{background:rgba(0,229,204,0.05);border:1px solid rgba(0,229,204,0.1);border-radius:9px;padding:10px 12px}
+.ml{font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:1.5px;color:var(--t3);margin-bottom:4px}
+.mv{font-family:'Syne',sans-serif;font-size:17px;font-weight:800}
+.mchart{background:rgba(0,229,204,0.03);border:1px solid var(--bd2);border-radius:9px;
+  height:66px;display:flex;align-items:flex-end;padding:7px;gap:3px;overflow:hidden}
+.mbar{border-radius:2px 2px 0 0;flex:1;min-height:4px;opacity:.8}
+.dcta{display:inline-flex;align-items:center;gap:10px;margin-top:34px;padding:13px 30px;
+  border-radius:10px;border:1px solid rgba(0,229,204,0.28);background:rgba(0,229,204,0.06);
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;color:var(--teal);
+  text-decoration:none;transition:all .22s}
+.dcta:hover{background:rgba(0,229,204,0.12);border-color:var(--teal);transform:translateY(-2px)}
+
+/* ── PRICING ── */
+.psec{position:relative;z-index:1;padding:90px 56px;max-width:740px;margin:0 auto;text-align:center}
+.pwrap{background:rgba(4,12,10,.92);border:1px solid rgba(0,229,204,0.2);
+  border-radius:22px;padding:50px 44px;position:relative;overflow:hidden;
+  box-shadow:0 0 80px rgba(0,229,204,0.05),0 44px 90px rgba(0,0,0,.5);margin-top:44px}
+.pwrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--teal),#00ffb3,var(--teal),transparent)}
+.pbadge{display:inline-flex;padding:4px 14px;border-radius:100px;
+  background:rgba(0,229,204,0.1);border:1px solid rgba(0,229,204,0.18);
+  font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2.5px;color:var(--teal);margin-bottom:18px}
+.pbig{font-family:'Syne',sans-serif;font-size:80px;font-weight:800;color:#fff;line-height:1;letter-spacing:-3px;margin-bottom:4px}
+.pbig sup{font-size:32px;color:var(--teal);vertical-align:super;margin-right:2px}
+.psub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:34px}
+.flist{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-bottom:36px;text-align:left}
+.flist li{padding:9px 0;font-size:13px;color:rgba(148,255,240,0.75);display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--bd2)}
+.fck{width:16px;height:16px;border-radius:50%;background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.22);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--teal)}
+.pcta{width:100%;padding:16px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#006b5e,var(--teal3),var(--teal));
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:3px;color:#000;
+  box-shadow:0 0 38px rgba(0,229,204,0.36);transition:all .22s;margin-bottom:18px}
+.pcta:hover{transform:translateY(-2px);box-shadow:0 0 56px rgba(0,229,204,0.56)}
+.cpills{display:flex;gap:10px;justify-content:center}
+.cpill{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 16px;border-radius:10px;border:1px solid rgba(0,229,204,0.12);
+  background:rgba(0,229,204,0.04);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;
+  color:rgba(0,255,200,0.55);text-decoration:none;transition:all .2s}
+.cpill:hover{border-color:var(--teal);color:var(--teal);background:rgba(0,229,204,0.1)}
+
+/* ── BUY MODAL ── */
+#buy-mo{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(14px);
+  z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+#buy-mo.open{display:flex}
+.bbox{background:rgba(4,12,10,.98);border:1px solid rgba(0,229,204,0.2);border-radius:20px;
+  width:100%;max-width:420px;overflow:hidden;
+  box-shadow:0 44px 110px rgba(0,0,0,.85);animation:pop .26s cubic-bezier(.34,1.4,.64,1)}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(16px)}to{opacity:1;transform:none}}
+.bhd{padding:32px 30px 24px;text-align:center;
+  background:linear-gradient(180deg,rgba(0,229,204,0.06),transparent);
+  border-bottom:1px solid rgba(0,229,204,0.1)}
+.bico{font-size:46px;margin-bottom:10px}
+.bnm{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.bamt{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:var(--teal)}
+.bamt span{font-size:15px;color:var(--t3);font-weight:400}
+.bbd{padding:24px 30px}
+.blbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--t3);text-align:center;margin-bottom:12px}
+.bopt{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(0,229,204,0.04);
+  border:1px solid rgba(0,229,204,0.11);border-radius:11px;margin-bottom:8px;cursor:pointer;text-decoration:none;transition:all .2s}
+.bopt:hover{background:rgba(0,229,204,0.1);border-color:var(--teal);transform:translateX(4px)}
+.boico{font-size:22px;flex-shrink:0}
+.bonm{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#fff;margin-bottom:2px}
+.boval{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal)}
+.boarr{margin-left:auto;color:rgba(0,229,204,0.3);font-size:15px}
+.bnote{text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--t3);margin-top:12px;line-height:1.8}
+.bcls{width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1px solid rgba(0,229,204,0.1);
+  background:transparent;color:rgba(0,229,204,0.35);font-family:'JetBrains Mono',monospace;
+  font-size:9px;letter-spacing:1.5px;cursor:pointer;transition:all .18s}
+.bcls:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ── AUTH MODAL ── */
+#auth-mo{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(16px);
+  z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+#auth-mo.open{display:flex}
+.abox{background:rgba(4,14,12,.98);border:1px solid rgba(0,229,204,0.2);
+  border-radius:22px;width:100%;max-width:420px;overflow:hidden;
+  box-shadow:0 48px 120px rgba(0,0,0,.9),0 0 60px rgba(0,229,204,0.05);
+  animation:pop .28s cubic-bezier(.34,1.4,.64,1)}
+.atop{padding:28px 30px 20px;text-align:center;
+  background:linear-gradient(180deg,rgba(0,229,204,0.07),transparent);
+  border-bottom:1px solid rgba(0,229,204,0.1)}
+.alogo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:5px;
+  color:transparent;background:linear-gradient(135deg,#fff,var(--teal));
+  -webkit-background-clip:text;background-clip:text;margin-bottom:3px}
+.asub{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--t3)}
+.atabs{display:flex;border-bottom:1px solid rgba(0,229,204,0.1)}
+.atab{flex:1;padding:13px;text-align:center;cursor:pointer;font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:2px;color:var(--t3);transition:all .2s;
+  border-bottom:2px solid transparent;}
+.atab.active{color:var(--teal);border-bottom-color:var(--teal);background:rgba(0,229,204,0.04)}
+.abody{padding:26px 30px}
+.apanel{display:none}.apanel.active{display:block}
+.aerr{background:rgba(255,69,96,0.1);border:1px solid rgba(255,69,96,0.24);border-radius:7px;
+  padding:8px 12px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--red);display:none}
+.aok{background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.2);border-radius:7px;
+  padding:8px 12px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal);display:none}
+.afield{margin-bottom:13px}
+.afield label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--t2);display:block;margin-bottom:5px}
+.afield input{width:100%;background:rgba(2,8,6,.92);border:1px solid rgba(0,229,204,0.16);
+  border-radius:9px;color:var(--t1);padding:10px 13px;font-family:'JetBrains Mono',monospace;
+  font-size:11px;outline:none;transition:border-color .2s}
+.afield input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,229,204,0.07)}
+.asub-btn{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#006b5e,var(--teal3),var(--teal));
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:#000;
+  box-shadow:0 0 20px rgba(0,229,204,0.25);transition:all .2s;margin-top:4px}
+.asub-btn:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(0,229,204,0.45)}
+.anote{text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;
+  color:var(--t3);margin-top:14px;letter-spacing:.5px}
+.anote a{color:var(--teal);text-decoration:none}
+.anote a:hover{text-decoration:underline}
+
+/* ── FOOTER ── */
+footer{position:relative;z-index:1;padding:28px 48px;border-top:1px solid var(--bd2);
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--t3)}
+footer a{color:var(--t3);text-decoration:none;transition:color .18s}
+footer a:hover{color:var(--teal)}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .65s,transform .65s}
+.reveal.visible{opacity:1;transform:none}
+
+@media(max-width:960px){
+  nav{padding:0 18px}
+  .nav-a{display:none}
+  .hero{grid-template-columns:1fr;padding:100px 22px 60px;text-align:center;gap:40px}
+  .hero-right{display:none}
+  .hero-p{max-width:100%}
+  .hero-btns{justify-content:center}
+  .hero-trust{justify-content:center}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .si:nth-child(n+4){border-top:1px solid var(--bd2)}
+  .fsec,.how,.demo,.psec{padding:60px 20px}
+  .bento{grid-template-columns:1fr}
+  .c4,.c3,.c5,.c7{grid-column:span 1}
+  .steps{grid-template-columns:1fr}
+  .mgrid{grid-template-columns:repeat(2,1fr)}
+  .flist{grid-template-columns:1fr}
+  .pwrap{padding:36px 22px}
+  .pbig{font-size:60px}
+  .cpills{flex-direction:column}
+  footer{flex-direction:column;gap:10px;text-align:center;padding:24px 18px}
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<!-- BUY MODAL -->
+<div id="buy-mo" onclick="if(event.target===this)closeBuy()">
+  <div class="bbox">
+    <div class="bhd"><div class="bico">🚀</div><div class="bnm">GET SHADOW TRACKER</div><div class="bamt"><sup>$</sup>15 <span>one-time</span></div></div>
+    <div class="bbd">
+      <div class="blbl">CONTACT US TO PURCHASE</div>
+      <a class="bopt" href="https://wa.me/212651623365" target="_blank"><div class="boico">💬</div><div><div class="bonm">WHATSAPP</div><div class="boval">+212 651-623365</div></div><div class="boarr">→</div></a>
+      <a class="bopt" href="mailto:shadowtracker03@gmail.com?subject=SHADOW Tracker - $15" target="_blank"><div class="boico">📧</div><div><div class="bonm">EMAIL</div><div class="boval">shadowtracker03@gmail.com</div></div><div class="boarr">→</div></a>
+      <div class="bnote">File delivered instantly after payment.<br/>One-time · No subscription · Lifetime access</div>
+      <button class="bcls" onclick="closeBuy()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL (Register button opens this) -->
+<div id="auth-mo" onclick="if(event.target===this)closeAuth()">
+  <div class="abox">
+    <div class="atop">
+      <div class="alogo">SHADOW</div>
+      <div class="asub">TRADING JOURNAL</div>
+    </div>
+    <div class="atabs">
+      <div class="atab active" id="tab-signup" onclick="switchAuthTab('signup')">SIGN UP</div>
+      <div class="atab" id="tab-signin" onclick="switchAuthTab('signin')">SIGN IN</div>
+    </div>
+    <div class="abody">
+      <!-- SIGN UP -->
+      <div class="apanel active" id="panel-signup">
+        <div class="aerr" id="su-err"></div>
+        <div class="aok" id="su-ok"></div>
+        <div class="afield"><label>FULL NAME</label><input type="text" id="su-name" placeholder="Your trading name"/></div>
+        <div class="afield"><label>USERNAME</label><input type="text" id="su-user" placeholder="Choose a username"/></div>
+        <div class="afield"><label>PASSWORD</label><input type="password" id="su-pass" placeholder="Create a password"/></div>
+        <div class="afield"><label>CONFIRM PASSWORD</label>
+          <input type="password" id="su-pass2" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doSignUp()"/>
+        </div>
+        <button class="asub-btn" onclick="doSignUp()">CREATE ACCOUNT →</button>
+        <div class="anote">Already registered? <a href="#" onclick="switchAuthTab('signin');return false">Sign in here →</a></div>
+      </div>
+      <!-- SIGN IN -->
+      <div class="apanel" id="panel-signin">
+        <div class="aerr" id="si-err"></div>
+        <div class="afield"><label>USERNAME</label><input type="text" id="si-user" placeholder="Your username"/></div>
+        <div class="afield"><label>PASSWORD</label>
+          <input type="password" id="si-pass" placeholder="Your password" onkeydown="if(event.key==='Enter')doSignIn()"/>
+        </div>
+        <button class="asub-btn" onclick="doSignIn()">SIGN IN →</button>
+        <div class="anote">New here? <a href="#" onclick="switchAuthTab('signup');return false">Create account →</a></div>
+        <div class="anote" style="margin-top:6px">Or open <a href="shadow-journal.html" target="_blank">shadow-journal.html</a> directly</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="topnav">
+  <div class="logo">SHADOW</div>
+  <div class="nav-r">
+    <a class="nav-a" href="#features">FEATURES</a>
+    <a class="nav-a" href="#how">HOW IT WORKS</a>
+    <a class="nav-a" href="#pricing">PRICING</a>
+    <button class="nav-register" onclick="openAuth()">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      REGISTER
+    </button>
+    <button class="nav-buy" onclick="openBuy()">BUY — $15</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow"><span class="pulse"></span>PROFESSIONAL TRADING JOURNAL · V4.0</div>
+    <h1 class="hero-h1"><span class="h1a">COMMAND YOUR</span><span class="h1b">TRADING EDGE</span></h1>
+    <p class="hero-p">The most advanced trading journal for serious traders. Track every trade, analyze psychology, simulate your future — all in one browser file.</p>
+    <div class="hero-btns">
+      <button class="btn-p" onclick="openBuy()">🛒 GET ACCESS — $15</button>
+      <a class="btn-g" href="shadow-journal.html" target="_blank">👁 LIVE DEMO</a>
+    </div>
+    <div class="hero-trust">
+      <span>100% BROWSER</span><div class="ts"></div>
+      <span>NO INSTALL</span><div class="ts"></div>
+      <span>ONE-TIME $15</span><div class="ts"></div>
+      <span>LIFETIME</span>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hcard">
+      <div class="hcard-top">
+        <div class="hd" style="background:#ff5f57"></div>
+        <div class="hd" style="background:#ffbd2e"></div>
+        <div class="hd" style="background:#28c840"></div>
+        <div class="hcard-lbl">SHADOW — COMMAND CENTER</div>
+      </div>
+      <div class="hcard-body">
+        <div class="hcg">
+          <div class="hcm"><div class="hcml">TOTAL P&L</div><div class="hcmv" style="color:#00e676">+$4,820</div></div>
+          <div class="hcm"><div class="hcml">WIN RATE</div><div class="hcmv" style="color:#00e5cc">64.2%</div></div>
+          <div class="hcm"><div class="hcml">TOTAL RR</div><div class="hcmv" style="color:#00ffb3">38.5R</div></div>
+          <div class="hcm"><div class="hcml">PLAN ✓</div><div class="hcmv" style="color:#ffb300">82%</div></div>
+        </div>
+        <div class="hcch" id="hcch"></div>
+        <div class="hctags"><span class="htag">AI COACH</span><span class="htag">MONTE CARLO</span><span class="htag">BEHAVIORAL</span><span class="htag">12+ MODULES</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats reveal">
+  <div class="si"><div class="sv">12+</div><div class="sl">MODULES</div></div>
+  <div class="si"><div class="sv">500</div><div class="sl">MC PATHS</div></div>
+  <div class="si"><div class="sv">AI</div><div class="sl">COACH</div></div>
+  <div class="si"><div class="sv">100%</div><div class="sl">BROWSER</div></div>
+  <div class="si"><div class="sv">$15</div><div class="sl">ONE-TIME</div></div>
+</div>
+
+<!-- FEATURES -->
+<section class="fsec" id="features">
+  <div class="sec-label reveal">WHAT'S INSIDE</div>
+  <h2 class="sec-h reveal">Every Tool You Need</h2>
+  <p class="sec-p reveal">Built for serious traders who want to understand their edge and grow consistently.</p>
+  <div class="bento">
+    <div class="bc c7 reveal"><div class="bc-acc"></div><span class="bc-ico">📊</span><div class="bc-t">COMMAND DASHBOARD</div><div class="bc-d">12 live metrics — P&L, Win Rate, Profit Factor, Total RR, Drawdown, Plan Compliance. All charts update in real time.</div><div class="mch" id="mch"></div><span class="bc-pill">LIVE CHARTS</span></div>
+    <div class="bc c5 reveal"><div class="bc-acc"></div><span class="bc-ico">🤖</span><div class="bc-t">AI TRADING COACH</div><div class="bc-d">Discipline score 0–100, best/worst session detection, weakness identification, growth projection from your real data.</div><span class="bc-pill">INTELLIGENT</span></div>
+    <div class="bc c4 reveal"><div class="bc-acc"></div><span class="bc-ico">📷</span><div class="bc-t">SCREENSHOT LOG</div><div class="bc-d">Upload chart screenshots per trade. Thumbnails in every table. Tap to zoom full screen.</div><span class="bc-pill">UPLOAD</span></div>
+    <div class="bc c4 reveal"><div class="bc-acc"></div><span class="bc-ico">📋</span><div class="bc-t">TRADING PLAN</div><div class="bc-d">Rule book with icon-tagged rules. Every trade tagged ✅⚠️❌. Track P&L following vs deviating.</div><span class="bc-pill">COMPLIANCE</span></div>
+    <div class="bc c4 reveal"><div class="bc-acc"></div><span class="bc-ico">📅</span><div class="bc-t">FULL CALENDAR</div><div class="bc-d">Monthly view with color-coded P&L days. 16 detailed stats, total RR, and full trade list per month.</div><span class="bc-pill">16 STATS</span></div>
+    <div class="bc c3 reveal"><div class="bc-acc"></div><span class="bc-ico">🎲</span><div class="bc-t">MONTE CARLO</div><div class="bc-d">500-path engine. Risk of ruin. See your edge simulated across thousands of futures.</div><span class="bc-pill">500 PATHS</span></div>
+    <div class="bc c3 reveal"><div class="bc-acc"></div><span class="bc-ico">🧠</span><div class="bc-t">BEHAVIORAL</div><div class="bc-d">Revenge trading detection, FOMO flagging, overtrading alerts, psychology heat map.</div><span class="bc-pill">PSYCHOLOGY</span></div>
+    <div class="bc c3 reveal"><div class="bc-acc"></div><span class="bc-ico">🏆</span><div class="bc-t">ACHIEVEMENTS</div><div class="bc-d">19 unlockable milestones — trading, discipline, profit. First trade to 100R.</div><span class="bc-pill">19 BADGES</span></div>
+    <div class="bc c3 reveal"><div class="bc-acc"></div><span class="bc-ico">👤</span><div class="bc-t">MULTI-ACCOUNT</div><div class="bc-d">Live, Prop, Demo, Paper — separate P&L per account with instant switch and comparison.</div><span class="bc-pill">ACCOUNTS</span></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="sec-label reveal" style="text-align:center">HOW IT WORKS</div>
+  <h2 class="sec-h reveal">Up & Running in 60 Seconds</h2>
+  <div class="steps">
+    <div class="step reveal"><div class="sn">1</div><div class="st">BUY & RECEIVE</div><div class="sd">Pay $15 via WhatsApp or Email. You receive the HTML file instantly — no server, no install.</div></div>
+    <div class="step reveal"><div class="sn">2</div><div class="st">REGISTER</div><div class="sd">Click REGISTER in the nav. Create your account in seconds — then open shadow-journal.html to login.</div></div>
+    <div class="step reveal"><div class="sn">3</div><div class="st">LOG & IMPROVE</div><div class="sd">Add trades, screenshots, follow your plan. The AI Coach guides you to consistency every session.</div></div>
+  </div>
+</section>
+
+<!-- DEMO MOCKUP -->
+<div class="demo">
+  <div class="sec-label reveal">PREVIEW</div>
+  <h2 class="sec-h reveal">See It In Action</h2>
+  <p class="sec-p reveal" style="margin-bottom:0">Full working demo in your browser.</p>
+  <div class="mockup reveal">
+    <div class="mtop">
+      <div class="md" style="background:#ff5f57"></div>
+      <div class="md" style="background:#ffbd2e"></div>
+      <div class="md" style="background:#28c840"></div>
+      <div class="murl">shadow-journal.html — COMMAND CENTER</div>
+    </div>
+    <div class="mbody">
+      <div class="mgrid">
+        <div class="mc"><div class="ml">TOTAL P&L</div><div class="mv" style="color:#00e676">+$4,820</div></div>
+        <div class="mc"><div class="ml">WIN RATE</div><div class="mv" style="color:#00e5cc">64.2%</div></div>
+        <div class="mc"><div class="ml">PROFIT FACTOR</div><div class="mv" style="color:#ffb300">2.14</div></div>
+        <div class="mc"><div class="ml">TOTAL RR</div><div class="mv" style="color:#00ffb3">38.5R</div></div>
+      </div>
+      <div class="mchart" id="dbars"></div>
+    </div>
+  </div>
+  <a class="dcta" href="shadow-journal.html" target="_blank">👁 OPEN LIVE DEMO →</a>
+</div>
+
+<!-- PRICING -->
+<section class="psec" id="pricing">
+  <div class="sec-label reveal">PRICING</div>
+  <h2 class="sec-h reveal">Simple. One Time. Yours.</h2>
+  <p class="sec-p reveal" style="margin-bottom:0">No subscriptions. Pay once and own it forever.</p>
+  <div class="pwrap reveal">
+    <div class="pbadge">FULL ACCESS · LIFETIME</div>
+    <div class="pbig"><sup>$</sup>15</div>
+    <div class="psub">ONE-TIME · NO SUBSCRIPTION</div>
+    <ul class="flist">
+      <li><div class="fck">✓</div>All 12 modules unlocked</li>
+      <li><div class="fck">✓</div>AI Coaching Engine</li>
+      <li><div class="fck">✓</div>Unlimited trades & accounts</li>
+      <li><div class="fck">✓</div>Screenshot upload & zoom</li>
+      <li><div class="fck">✓</div>Monte Carlo (500 paths)</li>
+      <li><div class="fck">✓</div>Trading Plan + compliance</li>
+      <li><div class="fck">✓</div>Achievements system</li>
+      <li><div class="fck">✓</div>Behavioral analysis</li>
+      <li><div class="fck">✓</div>Works 100% in browser</li>
+      <li><div class="fck">✓</div>Lifetime updates</li>
+    </ul>
+    <button class="pcta" onclick="openBuy()">🛒 GET SHADOW TRACKER — $15</button>
+    <div class="cpills">
+      <a class="cpill" href="https://wa.me/212651623365" target="_blank">💬 WhatsApp +212 651-623365</a>
+      <a class="cpill" href="mailto:shadowtracker03@gmail.com?subject=SHADOW Tracker Purchase" target="_blank">📧 shadowtracker03@gmail.com</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>© 2025 SHADOW TRACKER · ALL RIGHTS RESERVED</div>
+  <div style="display:flex;gap:20px">
+    <a href="https://wa.me/212651623365" target="_blank">WHATSAPP</a>
+    <a href="mailto:shadowtracker03@gmail.com" target="_blank">EMAIL</a>
+    <a href="shadow-journal.html" target="_blank">DEMO</a>
+  </div>
+</footer>
+
+<script>
+// ── VORTEX BACKGROUND ──
+(function(){
+  const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
+  let W,H,P=[],t=0;
+  function init(){
+    W=cv.width=innerWidth;H=cv.height=innerHeight;P=[];
+    const cx=W/2,cy=H/2,max=Math.min(W,H)*0.48;
+    for(let i=0;i<280;i++){
+      const ang=Math.random()*Math.PI*2,rad=max*(0.1+Math.random()*0.9);
+      P.push({cx,cy,ang,rad,spd:0.008+Math.random()*0.018,
+        len:4+Math.random()*18,phase:Math.random()*Math.PI*2,
+        op:0.3+Math.random()*0.7,col:Math.random()<0.65?'rgba(0,229,204,':'rgba(0,255,160,',
+        sz:Math.random()*1.8+0.3});
+    }
+  }
+  function draw(){
+    ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(0,0,W,H);
+    P.forEach(p=>{
+      p.ang+=p.spd*(0.8+0.4*Math.sin(t*0.003+p.phase));
+      const x=p.cx+Math.cos(p.ang)*p.rad,y=p.cy+Math.sin(p.ang)*p.rad;
+      const ax=p.cx+Math.cos(p.ang-p.spd*p.len)*p.rad,ay=p.cy+Math.sin(p.ang-p.spd*p.len)*p.rad;
+      const op=p.op*(0.5+0.5*Math.abs(Math.sin(t*0.004+p.phase)));
+      const g=ctx.createLinearGradient(ax,ay,x,y);
+      g.addColorStop(0,'transparent');g.addColorStop(1,p.col+op+')');
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(x,y);
+      ctx.strokeStyle=g;ctx.lineWidth=p.sz;ctx.stroke();
+    });
+    const cg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.min(W,H)*0.25);
+    cg.addColorStop(0,'rgba(0,229,204,0.04)');cg.addColorStop(1,'transparent');
+    ctx.fillStyle=cg;ctx.fillRect(0,0,W,H);
+    t++;requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',init);
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  init();draw();
+})();
+
+// ── NAV SCROLL ──
+window.addEventListener('scroll',()=>document.getElementById('topnav').classList.toggle('stuck',scrollY>40));
+
+// ── MINI CHARTS ──
+const hv=[15,28,48,32,62,78,54,84,68,74,90,60,80,65,52,70,88,45,78,92];
+const hc=['#00e676','#00e676','#00e676','#ff4560','#00e676','#ff4560','#ffb300','#00e676','#00e676','#ff4560','#00e676','#00e676','#00e676','#00e676','#ff4560','#00e676','#00e676','#ff4560','#00e676','#00e676'];
+['hcch','mch','dbars'].forEach(id=>{
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=hv.map((v,i)=>`<div style="flex:1;border-radius:2px 2px 0 0;min-height:5px;height:${v}%;background:${hc[i]};opacity:.8"></div>`).join('');
+});
+
+// ── BUY MODAL ──
+function openBuy(){document.getElementById('buy-mo').classList.add('open')}
+function closeBuy(){document.getElementById('buy-mo').classList.remove('open')}
+
+// ── AUTH MODAL ──
+function openAuth(tab){
+  document.getElementById('auth-mo').classList.add('open');
+  if(tab)switchAuthTab(tab);
+}
+function closeAuth(){document.getElementById('auth-mo').classList.remove('open')}
+
+function switchAuthTab(t){
+  ['signup','signin'].forEach(tab=>{
+    document.getElementById('tab-'+tab).classList.toggle('active',tab===t);
+    document.getElementById('panel-'+tab).classList.toggle('active',tab===t);
+  });
+}
+
+function getUsers(){return JSON.parse(localStorage.getItem('shadow_users')||'{}')}
+function saveUsers(u){localStorage.setItem('shadow_users',JSON.stringify(u))}
+
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3500)}
+function showOk(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block'}
+
+function doSignUp(){
+  const name=document.getElementById('su-name').value.trim();
+  const user=document.getElementById('su-user').value.trim().toLowerCase();
+  const pass=document.getElementById('su-pass').value;
+  const pass2=document.getElementById('su-pass2').value;
+  if(!name||!user||!pass){showErr('su-err','All fields are required.');return}
+  if(user.length<3){showErr('su-err','Username must be at least 3 characters.');return}
+  if(pass.length<4){showErr('su-err','Password must be at least 4 characters.');return}
+  if(pass!==pass2){showErr('su-err','Passwords do not match.');return}
+  const users=getUsers();
+  if(users[user]){showErr('su-err','Username already taken.');return}
+  users[user]={name,pass:btoa(pass),created:new Date().toISOString()};
+  saveUsers(users);
+  showOk('su-ok','✅ Account created! Open shadow-journal.html to login.');
+  ['su-name','su-user','su-pass','su-pass2'].forEach(id=>document.getElementById(id).value='');
+}
+
+function doSignIn(){
+  const user=document.getElementById('si-user').value.trim().toLowerCase();
+  const pass=document.getElementById('si-pass').value;
+  if(!user||!pass){showErr('si-err','Enter username and password.');return}
+  const users=getUsers();
+  if(!users[user]){showErr('si-err','Username not found.');return}
+  if(atob(users[user].pass)!==pass){showErr('si-err','Wrong password.');return}
+  // Save session and redirect to journal
+  localStorage.setItem('shadow_session',JSON.stringify({username:user,name:users[user].name}));
+  window.location.href='shadow-journal.html';
+}
+
+// ── SCROLL REVEAL ──
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:0.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ── BENTO GLOW ──
+document.querySelectorAll('.bc').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    card.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+    card.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+  });
+});
+
+// ── SMOOTH SCROLL ──
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault();const el=document.querySelector(a.getAttribute('href'));if(el)el.scrollIntoView({behavior:'smooth'})});
+});
+</script>
+</body>
+</html>
